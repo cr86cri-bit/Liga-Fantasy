@@ -310,3 +310,56 @@ Las escrituras siguen sin reintentos automáticos.
 
 Se aumentó el tamaño de textos en las métricas, pestañas, tarjetas de jugadores,
 mercado, modales, panel de protección y editor de alineación.
+
+## Sincronización exacta de alineación con Biwenger
+
+La vista de Mejor XI ya no inventa capitán ni ariete cuando existe una
+alineación guardada.
+
+Al entrar a la pestaña se consulta:
+
+`GET /api/v2/user?fields=lineup(date,type,captain,striker,playersID,reservesID)`
+
+y la vista utiliza como fuente de verdad:
+
+- `type`: formación real.
+- `playersID`: los 11 titulares en el orden guardado por Biwenger.
+- `captain`: capitán real; `0/null` significa sin capitán.
+- `striker`: ariete real; `0/null` significa sin ariete.
+- `reservesID`: suplentes.
+
+El orden `playersID` se conserva al construir cada línea del campo, evitando
+que el algoritmo de recomendación o el orden de la plantilla cambien
+horizontalmente a los jugadores.
+
+La recomendación automática queda separada: solo se aplica si el usuario entra
+en **Editar mi XI** y pulsa **Usar recomendado**.
+
+El guardado también acepta `striker` y sigue usando confirmación obligatoria,
+cola anti-rate-limit y una única escritura sin reintentos automáticos.
+
+
+## Mercado y Movimientos separados
+
+Se corrigió la detección de pujas activas para usar **la misma respuesta de
+`GET /market` que utiliza el mercado de Biwenger**. Las ofertas se leen desde
+`data.offers`, por lo que ya no hace falta una llamada adicional a
+`/user?fields=offers(...)`.
+
+La interfaz queda separada así:
+
+- **Mercado**: únicamente jugadores sobre los que todavía puedes hacer una nueva
+  puja. Si ya tienes una puja activa, ese jugador desaparece de esta lista.
+- **Movimientos**: tus pujas activas y tus propios jugadores puestos a la venta.
+
+Para evitar confundir ofertas recibidas por tus jugadores, una oferta solo se
+considera puja propia si apunta a un jugador ajeno que está visible en el
+mercado actual. Las ofertas vinculadas a tus propios jugadores publicados se
+descartan y quedan únicamente como ventas.
+
+Los cambios hechos directamente desde biwenger.com o la app oficial se reflejan
+en la siguiente sincronización del mercado (máximo aproximado de 5 minutos en
+uso normal o al pulsar Actualizar respetando el cooldown).
+
+Esta corrección **reduce** el consumo de API respecto a la versión anterior,
+porque ya no necesita una consulta independiente para las ofertas.

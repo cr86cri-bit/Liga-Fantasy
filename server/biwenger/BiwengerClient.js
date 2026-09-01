@@ -61,6 +61,7 @@ const TTL = {
   market:
     5 * 60 * 1000,
 
+
   ownUser:
     10 * 60 * 1000,
 
@@ -86,6 +87,7 @@ const TTL = {
 const MIN_RELOAD = {
   market:
     60 * 1000,
+
 
   ownUser:
     2 * 60 * 1000,
@@ -763,7 +765,7 @@ export class BiwengerClient {
         loader:
           () =>
             this.request(
-              "/user?fields=lineup(date,type,captain,playersID,reservesID)"
+              "/user?fields=lineup(date,type,captain,striker,playersID,reservesID)"
             ),
       }
     );
@@ -965,6 +967,9 @@ export class BiwengerClient {
               [],
 
             captain:
+              0,
+
+            striker:
               0,
           };
       }
@@ -1384,12 +1389,282 @@ export class BiwengerClient {
                   ),
               };
             }
-          )
-          .filter(Boolean);
 
-      const marketMeta =
+    )
+    .filter(Boolean);
+
+/*
+ * MIS PUJAS ACTIVAS
+ *
+ * Importante: Biwenger ya devuelve las pujas relacionadas con el
+ * usuario dentro de GET /market en data.offers. La versión anterior
+ * hacía otra llamada a /user?fields=offers(...), que no coincide con
+ * la pestaña "Pujas" de la web oficial en todos los casos.
+ *
+ * Usar /market tiene dos ventajas:
+ * - detecta también las pujas hechas desde biwenger.com/app;
+ * - no añade ninguna llamada adicional a la API.
+ */
+const marketOffers =
+  Array.isArray(
+    marketResponse
+      ?.data
+      ?.offers
+  )
+    ? marketResponse.data.offers
+    : [];
+
+const listingByPlayerId =
+  new Map(
+    rawMarket.map(
+      (listing) => [
+        Number(
+          listing.id
+        ),
+        listing,
+      ]
+    )
+  );
+
+const bidByPlayerId =
+  new Map();
+
+const nowSeconds =
+  Math.floor(
+    Date.now() /
+    1000
+  );
+
+for (
+  const offer of
+    marketOffers
+) {
+  const offerType =
+    String(
+      offer?.type ||
+      ""
+    ).toLowerCase();
+
+  if (
+    ![
+      "purchase",
+      "clause",
+    ].includes(
+      offerType
+    )
+  ) {
+    continue;
+  }
+
+  const fromId =
+    Number(
+      offer
+        ?.from
+        ?.id ||
+      offer
+        ?.fromID ||
+      0
+    );
+
+  /*
+   * /market devuelve las ofertas visibles para el usuario autenticado.
+   * No usamos fromID como filtro porque Biwenger no mantiene la misma
+   * forma para ofertas al Mercado y ofertas entre usuarios. La regla
+   * segura está más abajo: solo aceptamos ofertas dirigidas a listings
+   * que NO son nuestros. Las ofertas recibidas por nuestras ventas se
+   * descartan automáticamente.
+   */
+
+  const playerIds =
+    extraerIdsJugadoresOferta(
+      offer
+    );
+
+  const offerUntil =
+    normalizarTimestampSeconds(
+      offer?.until
+    );
+
+  const status =
+    String(
+      offer?.status ||
+      "waiting"
+    ).toLowerCase();
+
+  const inactiveStatuses =
+    new Set([
+      "accepted",
+      "processed",
+      "rejected",
+      "expired",
+      "cancelled",
+      "canceled",
+      "deleted",
+    ]);
+
+  const isActiveByStatus =
+    !inactiveStatuses.has(
+      status
+    );
+
+  const isActiveByTime =
+    !offerUntil ||
+    offerUntil >
+      nowSeconds;
+
+  for (
+    const playerId of
+      playerIds
+  ) {
+    const listing =
+      listingByPlayerId.get(
+        Number(
+          playerId
+        )
+      );
+
+    /*
+     * Una puja que hacemos debe apuntar a un jugador que NO es
+     * nuestro. Así evitamos confundir ofertas recibidas por nuestros
+     * propios jugadores puestos a la venta con nuestras pujas.
+     */
+    if (
+      !listing ||
+      listing.isMine
+    ) {
+      continue;
+    }
+
+    const normalized = {
+      ...listing,
+
+      offerId:
+        Number(
+          offer?.id ||
+          0
+        ) ||
+        null,
+
+      offerType,
+
+      offerStatus:
+        status,
+
+      offerAmount:
+        Number(
+          offer?.amount ||
+          0
+        ),
+
+      offerCreated:
+        normalizarTimestampSeconds(
+          offer?.created ||
+          offer?.date
+        ),
+
+      offerUntil,
+
+      offerFromId:
+        fromId ||
+        Number(
+          this.userId
+        ),
+
+      offerToId:
+        Number(
+          offer
+            ?.to
+            ?.id ||
+          offer
+            ?.toID ||
+          listing.ownerId ||
+          0
+        ) ||
+        null,
+
+      offerToName:
+        offer
+          ?.to
+          ?.name ||
+        listing.ownerName ||
+        "Mercado Biwenger",
+
+      isActiveOffer:
+        isActiveByStatus &&
+        isActiveByTime,
+    };
+
+    if (
+      !normalized.isActiveOffer
+    ) {
+      continue;
+    }
+
+    const previous =
+      bidByPlayerId.get(
+        Number(
+          playerId
+        )
+      );
+
+    if (
+      !previous ||
+      Number(
+        normalized.offerCreated ||
+        normalized.offerUntil ||
+        0
+      ) >=
+      Number(
+        previous.offerCreated ||
+        previous.offerUntil ||
+        0
+      )
+    ) {
+      bidByPlayerId.set(
+        Number(
+          playerId
+        ),
+        normalized
+      );
+    }
+  }
+}
+
+const myBids =
+  [
+    ...bidByPlayerId.values(),
+  ].sort(
+    (a, b) =>
+      Number(
+        b.offerCreated ||
+        b.offerUntil ||
+        0
+      ) -
+      Number(
+        a.offerCreated ||
+        a.offerUntil ||
+        0
+      )
+  );
+
+const marketMeta =
         crearResumenMercado(
           rawMarket
+        );
+
+      const myBidByPlayer =
+        new Map(
+          (
+            myBids ||
+            []
+          ).map(
+            (bid) => [
+              Number(
+                bid.id
+              ),
+              bid,
+            ]
+          )
         );
 
       const market =
@@ -1397,7 +1672,21 @@ export class BiwengerClient {
           rawMarket,
           rivals,
           finances
-        ).sort(
+        )
+          .map(
+            (player) => ({
+              ...player,
+
+              myBid:
+                myBidByPlayer.get(
+                  Number(
+                    player.id
+                  )
+                ) ||
+                null,
+            })
+          )
+          .sort(
           (a, b) => {
             const aBid =
               a
@@ -1597,6 +1886,7 @@ export class BiwengerClient {
 
         market,
         marketMeta,
+        myBids,
         bestXI,
         lineup,
         rivals,
@@ -1873,6 +2163,7 @@ async guardarAlineacion({
   playersID,
   reservesID = [],
   captain = 0,
+  striker = 0,
 }) {
   await this.inicializar();
 
@@ -2140,6 +2431,79 @@ async guardarAlineacion({
     );
   }
 
+  const strikerId =
+    Number(
+      striker ||
+      0
+    );
+
+  if (
+    strikerId !==
+      0 &&
+    !starters.includes(
+      strikerId
+    )
+  ) {
+    throw new Error(
+      "El ariete debe formar parte del XI titular."
+    );
+  }
+
+  if (
+    strikerId !==
+    0
+  ) {
+    const strikerRaw =
+      catalogPlayers[
+        String(
+          strikerId
+        )
+      ] ||
+      {};
+
+    if (
+      Number(
+        strikerRaw
+          ?.position ||
+        0
+      ) !==
+      4
+    ) {
+      throw new Error(
+        "El ariete debe ser un delantero."
+      );
+    }
+  }
+
+  const lineupPayload = {
+    type:
+      formation,
+
+    playersID:
+      starters,
+
+    reservesID:
+      sanitizedReserves,
+
+    captain:
+      captainId,
+  };
+
+  /*
+   * Biwenger expone `striker` dentro de lineup cuando la
+   * liga tiene habilitado el ariete. Enviamos 0 cuando el
+   * usuario no ha seleccionado ninguno, igual que con capitán.
+   */
+  if (
+    this.league
+      ?.settings
+      ?.lineupStriker !==
+    false
+  ) {
+    lineupPayload.striker =
+      strikerId;
+  }
+
   const result =
     await this.writeRequest(
       "/user?fields=*,lineup(date)",
@@ -2148,19 +2512,8 @@ async guardarAlineacion({
           "PUT",
 
         body: {
-          lineup: {
-            type:
-              formation,
-
-            playersID:
-              starters,
-
-            reservesID:
-              sanitizedReserves,
-
-            captain:
-              captainId,
-          },
+          lineup:
+            lineupPayload,
         },
       }
     );
@@ -2184,6 +2537,9 @@ async guardarAlineacion({
 
     captain:
       captainId,
+
+    striker:
+      strikerId,
 
     biwenger:
       result,
@@ -2887,6 +3243,91 @@ function endpointName(
     normalized ||
     "api"
   );
+}
+
+function extraerIdsJugadoresOferta(
+  offer
+) {
+  const candidates = [];
+
+  if (
+    Array.isArray(
+      offer?.requestedPlayers
+    )
+  ) {
+    candidates.push(
+      ...offer.requestedPlayers
+    );
+  }
+
+  if (
+    Array.isArray(
+      offer?.playersID
+    )
+  ) {
+    candidates.push(
+      ...offer.playersID
+    );
+  }
+
+  if (
+    offer?.player !==
+    undefined &&
+    offer?.player !==
+    null
+  ) {
+    candidates.push(
+      offer.player
+    );
+  }
+
+  if (
+    offer?.playerID
+  ) {
+    candidates.push(
+      offer.playerID
+    );
+  }
+
+  if (
+    offer?.requestedPlayer
+  ) {
+    candidates.push(
+      offer.requestedPlayer
+    );
+  }
+
+  if (
+    offer?.requestedPlayerID
+  ) {
+    candidates.push(
+      offer.requestedPlayerID
+    );
+  }
+
+  return [
+    ...new Set(
+      candidates
+        .map(
+          (candidate) =>
+            Number(
+              typeof candidate ===
+                "object"
+                ? candidate?.id ||
+                  candidate?.playerID ||
+                  candidate?.player
+                : candidate
+            )
+        )
+        .filter(
+          (id) =>
+            Number.isInteger(
+              id
+            ) &&
+            id > 0
+        )
+    ),
+  ];
 }
 
 function normalizarTimestampSeconds(

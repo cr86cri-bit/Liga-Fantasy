@@ -326,6 +326,13 @@ app.post(
                   ?.captain ||
                 0
               ),
+
+            striker:
+              Number(
+                req.body
+                  ?.striker ||
+                0
+              ),
           });
 
       return res.json({

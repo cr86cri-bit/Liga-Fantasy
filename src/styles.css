@@ -4900,3 +4900,474 @@ footer {
   cursor: wait;
   transform: none;
 }
+
+
+/* =========================================================
+   XI SINCRONIZADO CON BIWENGER
+   ========================================================= */
+
+.xi-specials-sync {
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(135px, 1fr)
+    );
+}
+
+.lineup-editor-controls-sync {
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(330px, 430px);
+}
+
+.lineup-role-selectors {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+  gap: 8px;
+}
+
+.lineup-confirm-summary-four {
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(0, 1fr)
+    );
+}
+
+.lineup-confirm-roles {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.lineup-confirm-roles b {
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border-radius: 999px;
+  font-size: 8px;
+}
+
+.lineup-confirm-roles
+  .role-captain {
+  background: #f0bd42;
+  color: #241a06;
+}
+
+.lineup-confirm-roles
+  .role-striker {
+  background: #df594f;
+  color: #fff;
+}
+
+.football-pitch-synced
+  .pitch-line {
+  /*
+   * Los elementos ya llegan en el mismo orden que playersID.
+   * No usamos order CSS ni reordenamientos visuales.
+   */
+  direction: ltr;
+}
+
+.lineup-sync-note {
+  padding: 11px 12px;
+  border: 1px solid #2b5b40;
+  border-radius: 10px;
+  background: rgba(17, 53, 31, 0.50);
+}
+
+.lineup-sync-note strong {
+  color: #8bedaa;
+}
+
+@media (max-width: 850px) {
+  .xi-specials-sync {
+    grid-template-columns:
+      1fr;
+  }
+
+  .lineup-editor-controls-sync {
+    grid-template-columns:
+      1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .lineup-role-selectors,
+  .lineup-confirm-summary-four {
+    grid-template-columns:
+      1fr;
+  }
+}
+
+
+/* =========================================================
+   MERCADO · MIS PUJAS Y MIS VENTAS
+   ========================================================= */
+
+.my-market-activity {
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid #28533a;
+  border-radius: 15px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(10, 34, 19, 0.96),
+      rgba(6, 24, 13, 0.98)
+    );
+}
+
+.my-market-activity-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.my-market-activity-head h3 {
+  margin: 3px 0 4px;
+  font-size: 18px;
+}
+
+.my-market-activity-head p {
+  max-width: 720px;
+  margin: 0;
+  color: #728579;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.my-market-activity-counts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.my-market-activity-counts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 31px;
+  padding: 0 9px;
+  border: 1px solid #2f5b41;
+  border-radius: 999px;
+  background: #102b1a;
+  color: #85998c;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.my-market-activity-counts b {
+  color: #87eda9;
+  font-size: 12px;
+}
+
+.my-market-activity-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.my-market-move-card {
+  display: grid;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid #294b37;
+  border-radius: 12px;
+  background: #0a2013;
+}
+
+.my-sale-card {
+  border-color: #685324;
+  background: #211b0f;
+}
+
+.my-market-move-main {
+  display: grid;
+  grid-template-columns:
+    46px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+}
+
+.my-market-move-main > div > span {
+  display: block;
+  margin-top: 2px;
+  color: #718277;
+  font-size: 10px;
+}
+
+.my-market-move-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.my-market-move-name strong {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-market-move-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+}
+
+.my-market-move-status-row > span {
+  color: #65776c;
+  font-size: 9px;
+}
+
+.my-offer-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 23px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.my-offer-status.status-active {
+  background: #18532d;
+  color: #9df1b5;
+}
+
+.my-offer-status.status-success {
+  background: #195c38;
+  color: #a0f5c0;
+}
+
+.my-offer-status.status-danger {
+  background: #552325;
+  color: #ff9c9c;
+}
+
+.my-offer-status.status-muted {
+  background: #28322c;
+  color: #94a199;
+}
+
+.my-offer-status.status-sale {
+  background: #644c18;
+  color: #ffda75;
+}
+
+.my-market-move-metrics {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.my-market-move-metrics > div {
+  padding: 8px 9px;
+  border-radius: 8px;
+  background: rgba(5, 19, 11, 0.66);
+}
+
+.my-market-move-metrics span,
+.my-market-move-metrics strong {
+  display: block;
+}
+
+.my-market-move-metrics span {
+  color: #65786b;
+  font-size: 8px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.my-market-move-metrics strong {
+  margin-top: 3px;
+  font-size: 12px;
+}
+
+.my-market-move-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.my-market-move-bottom > div {
+  min-width: 0;
+}
+
+.my-market-move-bottom small {
+  display: block;
+  margin-bottom: 3px;
+  overflow: hidden;
+  color: #6e8174;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-market-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  border: 1px dashed #2b5239;
+  border-radius: 11px;
+  background: rgba(8, 29, 16, 0.64);
+}
+
+.my-market-empty > span {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  flex: 0 0 35px;
+  border-radius: 999px;
+  background: #18502d;
+  color: #9df0b6;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.my-market-empty strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 11px;
+}
+
+.my-market-empty p {
+  margin: 0;
+  color: #6f8175;
+  font-size: 10px;
+}
+
+.recent-bids-details {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid #1f422d;
+}
+
+.recent-bids-details summary {
+  color: #789083;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.my-market-activity-grid.recent {
+  margin-top: 8px;
+  opacity: 0.82;
+}
+
+.active-bid-button {
+  border-color: #2f7048 !important;
+  background: #123c23 !important;
+  color: #a0f2b8 !important;
+  cursor: default !important;
+}
+
+.active-bid-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 38px;
+  padding: 0 11px;
+  border: 1px solid #317249;
+  border-radius: 10px;
+  background: #123b23;
+  color: #9cefb4;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+@media (max-width: 850px) {
+  .my-market-activity-head {
+    flex-direction: column;
+  }
+
+  .my-market-activity-counts {
+    justify-content: flex-start;
+  }
+
+  .my-market-activity-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   MOVIMIENTOS · VISTA SEPARADA
+   ========================================================= */
+
+.movements-tab-counts {
+  align-items: center;
+}
+
+.movements-sections {
+  display: grid;
+  gap: 14px;
+}
+
+.movements-group {
+  padding: 14px;
+  border: 1px solid #244b34;
+  border-radius: 15px;
+  background: #081d11;
+}
+
+.movements-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 11px;
+}
+
+.movements-group-head h3 {
+  margin: 3px 0 0;
+  font-size: 18px;
+}
+
+.movements-group-head > b {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 9px;
+  border: 1px solid #326646;
+  border-radius: 999px;
+  background: #123a22;
+  color: #9bf0b4;
+  font-size: 13px;
+}
+
+.movement-subempty,
+.movements-empty {
+  color: #718579;
+  font-size: 11px;
+}
+
+.movement-subempty {
+  padding: 14px;
+  border: 1px dashed #294a36;
+  border-radius: 10px;
+  background: rgba(7, 23, 13, 0.65);
+}
+
+@media (max-width: 700px) {
+  .movements-tab-counts {
+    justify-content: flex-start;
+  }
+}
