@@ -470,6 +470,372 @@ export class BiwengerClient {
     };
   }
 
+
+async writeRequest(
+  path,
+  {
+    method = "POST",
+    body,
+    userId = this.userId,
+  } = {}
+) {
+  await this.inicializar();
+
+  /*
+   * Las escrituras NO se reintentan automáticamente.
+   * Si Biwenger procesara una puja y se perdiera la
+   * respuesta, repetirla podría crear otra oferta.
+   */
+  const response = await fetch(
+    `${API_URL}${path}`,
+    {
+      method,
+
+      headers:
+        this.crearHeaders(
+          true,
+          userId
+        ),
+
+      body:
+        body === undefined
+          ? undefined
+          : JSON.stringify(
+              body
+            ),
+    }
+  );
+
+  const result =
+    await this.leerJson(
+      response
+    );
+
+  if (
+    response.status ===
+      401 ||
+    response.status ===
+      403
+  ) {
+    throw new Error(
+      "La sesión de Biwenger ha caducado."
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+        result?.error ||
+        `Biwenger rechazó la operación (${response.status}).`
+    );
+  }
+
+  if (
+    Number(
+      result?.status || 200
+    ) >= 400
+  ) {
+    throw new Error(
+      result?.message ||
+        "Biwenger rechazó la operación."
+    );
+  }
+
+  return result;
+}
+
+async pujarJugador({
+  playerId,
+  amount,
+}) {
+  await this.inicializar();
+
+  const id =
+    Number(
+      playerId
+    );
+
+  const bid =
+    Math.round(
+      Number(
+        amount
+      )
+    );
+
+  if (
+    !Number.isInteger(id) ||
+    id <= 0
+  ) {
+    throw new Error(
+      "Jugador inválido."
+    );
+  }
+
+  if (
+    !Number.isFinite(bid) ||
+    bid <= 0
+  ) {
+    throw new Error(
+      "La puja debe ser mayor a 0 €."
+    );
+  }
+
+  /*
+   * Consultamos el mercado otra vez justo antes
+   * de escribir. No confiamos en ownerId/precio
+   * enviados por el navegador.
+   */
+  const marketResponse =
+    await this.request(
+      "/market"
+    );
+
+  const sales =
+    marketResponse
+      ?.data
+      ?.sales ||
+    [];
+
+  const sale =
+    sales.find(
+      (item) =>
+        Number(
+          item
+            ?.player
+            ?.id ||
+          0
+        ) === id
+    );
+
+  if (!sale) {
+    throw new Error(
+      "El jugador ya no está disponible en el mercado."
+    );
+  }
+
+  const sellerId =
+    Number(
+      sale
+        ?.user
+        ?.id ||
+      0
+    );
+
+  if (
+    sellerId ===
+    Number(
+      this.userId
+    )
+  ) {
+    throw new Error(
+      "No puedes pujar por un jugador ofrecido por ti."
+    );
+  }
+
+  const maximumBid =
+    Number(
+      marketResponse
+        ?.data
+        ?.status
+        ?.maximumBid ||
+      0
+    );
+
+  if (
+    maximumBid > 0 &&
+    bid > maximumBid
+  ) {
+    throw new Error(
+      `La puja supera tu límite actual de ${maximumBid.toLocaleString("es-ES")} €.`
+    );
+  }
+
+  /*
+   * POST /api/v2/offers
+   *
+   * Mercado diario:
+   *   to: null
+   *
+   * Venta de otro participante:
+   *   to: sellerUserId
+   */
+  const body = {
+    to:
+      sellerId > 0
+        ? sellerId
+        : null,
+
+    type:
+      "purchase",
+
+    amount:
+      bid,
+
+    requestedPlayers: [
+      id,
+    ],
+  };
+
+  const result =
+    await this.writeRequest(
+      "/offers",
+      {
+        method:
+          "POST",
+
+        body,
+      }
+    );
+
+  return {
+    operation:
+      "bid",
+
+    playerId:
+      id,
+
+    amount:
+      bid,
+
+    sellerId:
+      sellerId ||
+      null,
+
+    sellerType:
+      sellerId > 0
+        ? "user"
+        : "market",
+
+    biwenger:
+      result,
+  };
+}
+
+async ponerJugadorVenta({
+  playerId,
+  price,
+  rejectOffers = false,
+}) {
+  await this.inicializar();
+
+  const id =
+    Number(
+      playerId
+    );
+
+  const salePrice =
+    Math.round(
+      Number(
+        price
+      )
+    );
+
+  if (
+    !Number.isInteger(id) ||
+    id <= 0
+  ) {
+    throw new Error(
+      "Jugador inválido."
+    );
+  }
+
+  if (
+    !Number.isFinite(
+      salePrice
+    ) ||
+    salePrice <= 0
+  ) {
+    throw new Error(
+      "El precio de venta debe ser mayor a 0 €."
+    );
+  }
+
+  /*
+   * Verificamos que el jugador siga siendo nuestro
+   * justo antes de la escritura.
+   */
+  const userResponse =
+    await this.request(
+      "/user?fields=players(id,owner)"
+    );
+
+  const ownPlayers =
+    userResponse
+      ?.data
+      ?.players ||
+    [];
+
+  const isMine =
+    ownPlayers.some(
+      (item) =>
+        Number(
+          item?.id ||
+          0
+        ) === id
+    );
+
+  if (!isMine) {
+    throw new Error(
+      "Ese jugador ya no pertenece a tu plantilla."
+    );
+  }
+
+  /*
+   * POST /api/v2/market
+   * {
+   *   type: "sell",
+   *   player,
+   *   price,
+   *   rejectOffers
+   * }
+   */
+  const body = {
+    type:
+      "sell",
+
+    player:
+      id,
+
+    price:
+      salePrice,
+
+    rejectOffers:
+      Boolean(
+        rejectOffers
+      ),
+  };
+
+  const result =
+    await this.writeRequest(
+      "/market",
+      {
+        method:
+          "POST",
+
+        body,
+      }
+    );
+
+  return {
+    operation:
+      "sell",
+
+    playerId:
+      id,
+
+    price:
+      salePrice,
+
+    rejectOffers:
+      Boolean(
+        rejectOffers
+      ),
+
+    biwenger:
+      result,
+  };
+}
+
   crearHeaders(includeLeague = false, userId = this.userId) {
     const headers = {
       Accept: "application/json, text/plain, */*",

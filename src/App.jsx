@@ -1037,7 +1037,445 @@ function crearBusquedaFuente(
   );
 }
 
-function PlayerDetailModal({ player, onClose, context = "team", now }) {
+
+function RealActionModal({
+  action,
+  finances,
+  loading,
+  error,
+  onClose,
+  onConfirm,
+}) {
+  const [
+    amount,
+    setAmount,
+  ] = useState(
+    () =>
+      String(
+        action?.defaultAmount ||
+        0
+      )
+  );
+
+  const [
+    acknowledged,
+    setAcknowledged,
+  ] = useState(false);
+
+  const [
+    rejectOffers,
+    setRejectOffers,
+  ] = useState(false);
+
+  useEffect(() => {
+    setAmount(
+      String(
+        action?.defaultAmount ||
+        0
+      )
+    );
+
+    setAcknowledged(
+      false
+    );
+
+    setRejectOffers(
+      false
+    );
+  }, [
+    action?.type,
+    action?.player?.id,
+    action?.defaultAmount,
+  ]);
+
+  if (!action) {
+    return null;
+  }
+
+  const numericAmount =
+    Math.round(
+      Number(
+        amount
+      )
+    );
+
+  const validAmount =
+    Number.isFinite(
+      numericAmount
+    ) &&
+    numericAmount > 0;
+
+  const isBid =
+    action.type ===
+    "bid";
+
+  const exceedsMaxBid =
+    isBid &&
+    Number(
+      finances
+        ?.maximumBid ||
+      0
+    ) > 0 &&
+    numericAmount >
+      Number(
+        finances
+          ?.maximumBid
+      );
+
+  const listedPrice =
+    Number(
+      action
+        ?.player
+        ?.marketIntelligence
+        ?.listedPrice ||
+      action
+        ?.player
+        ?.salePrice ||
+      0
+    );
+
+  const belowListing =
+    isBid &&
+    listedPrice > 0 &&
+    numericAmount <
+      listedPrice;
+
+  const canConfirm =
+    validAmount &&
+    acknowledged &&
+    !exceedsMaxBid &&
+    !loading;
+
+  const submit =
+    () => {
+      if (!canConfirm) {
+        return;
+      }
+
+      onConfirm({
+        amount:
+          numericAmount,
+
+        rejectOffers:
+          Boolean(
+            rejectOffers
+          ),
+      });
+    };
+
+  return (
+    <Modal
+      open={Boolean(action)}
+      onClose={() => {
+        if (!loading) {
+          onClose();
+        }
+      }}
+      title={
+        isBid
+          ? `Confirmar puja · ${action.player.name}`
+          : `Poner a la venta · ${action.player.name}`
+      }
+      subtitle="Esta operación modifica tu liga real de Biwenger."
+      wide
+    >
+      <div className="real-action-warning">
+        <span>
+          ⚠
+        </span>
+
+        <div>
+          <strong>
+            Operación real
+          </strong>
+
+          <p>
+            No se enviará nada a Biwenger hasta que marques
+            la confirmación y pulses el botón final.
+          </p>
+        </div>
+      </div>
+
+      <div className="real-action-player">
+        <PlayerPhoto
+          player={
+            action.player
+          }
+          size="normal"
+        />
+
+        <div>
+          <div className="modal-badges">
+            <Position
+              position={
+                action
+                  .player
+                  .position
+              }
+            />
+
+            {isBid ? (
+              <SellerBadge
+                player={
+                  action.player
+                }
+              />
+            ) : (
+              <Recommendation
+                value={
+                  action
+                    .player
+                    .analysis
+                    ?.recommendation
+                }
+              />
+            )}
+          </div>
+
+          <h3>
+            {
+              action
+                .player
+                .name
+            }
+          </h3>
+
+          <span>
+            {
+              action
+                .player
+                .teamName
+            }
+          </span>
+        </div>
+      </div>
+
+      <div className="real-action-grid">
+        <DetailMetric
+          label={
+            isBid
+              ? "Precio pedido"
+              : "Valor Biwenger"
+          }
+          value={
+            formatMoney(
+              isBid
+                ? listedPrice
+                : action
+                    .player
+                    .price
+            )
+          }
+        />
+
+        <DetailMetric
+          label={
+            isBid
+              ? "Puja máxima"
+              : "Saldo actual"
+          }
+          value={
+            formatMoney(
+              isBid
+                ? finances
+                    ?.maximumBid
+                : finances
+                    ?.balance
+            )
+          }
+        />
+
+        <DetailMetric
+          label={
+            isBid
+              ? "Saldo"
+              : "Puntos"
+          }
+          value={
+            isBid
+              ? formatMoney(
+                  finances
+                    ?.balance
+                )
+              : `${action.player.points || 0} pts`
+          }
+        />
+      </div>
+
+      <label className="real-action-amount">
+        <span>
+          {isBid
+            ? "Importe de la puja"
+            : "Precio de venta"}
+        </span>
+
+        <div className="real-action-input-wrap">
+          <input
+            type="number"
+            min="1"
+            step="10000"
+            inputMode="numeric"
+            value={
+              amount
+            }
+            onChange={
+              (event) =>
+                setAmount(
+                  event.target.value
+                )
+            }
+            disabled={
+              loading
+            }
+          />
+
+          <b>
+            €
+          </b>
+        </div>
+
+        <small>
+          {validAmount
+            ? formatMoney(
+                numericAmount
+              )
+            : "Introduce un importe válido"}
+        </small>
+      </label>
+
+      {belowListing && (
+        <div className="real-action-note warning">
+          La puja está por debajo del precio publicado.
+          Biwenger decidirá si es válida para ese vendedor.
+        </div>
+      )}
+
+      {exceedsMaxBid && (
+        <div className="real-action-note danger">
+          El importe supera tu puja máxima actual de{" "}
+          {formatMoney(
+            finances
+              ?.maximumBid
+          )}.
+        </div>
+      )}
+
+      {!isBid && (
+        <label className="real-action-checkbox secondary-check">
+          <input
+            type="checkbox"
+            checked={
+              rejectOffers
+            }
+            onChange={
+              (event) =>
+                setRejectOffers(
+                  event
+                    .target
+                    .checked
+                )
+            }
+            disabled={
+              loading
+            }
+          />
+
+          <span>
+            <strong>
+              Rechazar ofertas existentes
+            </strong>
+
+            <small>
+              Está desactivado por defecto. Actívalo solo si
+              quieres descartar las ofertas ya recibidas.
+            </small>
+          </span>
+        </label>
+      )}
+
+      <label className="real-action-checkbox">
+        <input
+          type="checkbox"
+          checked={
+            acknowledged
+          }
+          onChange={
+            (event) =>
+              setAcknowledged(
+                event
+                  .target
+                  .checked
+              )
+          }
+          disabled={
+            loading
+          }
+        />
+
+        <span>
+          <strong>
+            Confirmo que he revisado el jugador y el importe.
+          </strong>
+
+          <small>
+            Esta casilla es obligatoria para ejecutar la operación.
+          </small>
+        </span>
+      </label>
+
+      {error && (
+        <div className="real-action-error">
+          {error}
+        </div>
+      )}
+
+      <div className="real-action-footer">
+        <button
+          type="button"
+          className="real-action-cancel"
+          onClick={
+            onClose
+          }
+          disabled={
+            loading
+          }
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          className={
+            isBid
+              ? "real-action-confirm bid"
+              : "real-action-confirm sell"
+          }
+          onClick={
+            submit
+          }
+          disabled={
+            !canConfirm
+          }
+        >
+          {loading
+            ? "Enviando..."
+            : isBid
+              ? `Confirmar puja · ${validAmount ? formatMoney(numericAmount) : "-"}`
+              : `Confirmar venta · ${validAmount ? formatMoney(numericAmount) : "-"}`}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function PlayerDetailModal({
+  player,
+  onClose,
+  context = "team",
+  now,
+  onSell,
+  onBid,
+}) {
   if (!player) return null;
 
   const intel = player.marketIntelligence || null;
@@ -1079,6 +1517,38 @@ function PlayerDetailModal({ player, onClose, context = "team", now }) {
           analysis={player.analysis}
           compact
         />
+      </div>
+
+      <div className="player-detail-actions">
+        {context === "team" && onSell && (
+          <button
+            type="button"
+            className="operation-button sell"
+            onClick={() =>
+              onSell(
+                player
+              )
+            }
+          >
+            <span>🏷</span>
+            Poner a la venta
+          </button>
+        )}
+
+        {context === "market" && onBid && !player.isMine && (
+          <button
+            type="button"
+            className="operation-button bid"
+            onClick={() =>
+              onBid(
+                player
+              )
+            }
+          >
+            <span>💰</span>
+            Pujar por {player.name}
+          </button>
+        )}
       </div>
 
       {context === "market" && (
@@ -1224,7 +1694,7 @@ function PlayerDetailModal({ player, onClose, context = "team", now }) {
   );
 }
 
-function TeamChip({ player, onDetails }) {
+function TeamChip({ player, onDetails, onSell }) {
   return (
     <article className="player-chip">
       <div className="chip-photo-wrap">
@@ -1255,13 +1725,33 @@ function TeamChip({ player, onDetails }) {
           </span>
         </div>
 
-        <DetailButton onClick={() => onDetails(player)} />
+        <div className="chip-action-row">
+          <DetailButton
+            onClick={() =>
+              onDetails(
+                player
+              )
+            }
+          />
+
+          <button
+            type="button"
+            className="chip-operation-button sell"
+            onClick={() =>
+              onSell(
+                player
+              )
+            }
+          >
+            🏷 Vender
+          </button>
+        </div>
       </div>
     </article>
   );
 }
 
-function MarketChip({ player, onDetails, now }) {
+function MarketChip({ player, onDetails, onBid, now }) {
   const intel = player.marketIntelligence || {};
 
   return (
@@ -1322,9 +1812,28 @@ function MarketChip({ player, onDetails, now }) {
               : "bid-decision bid-decision-no"
           }
         >
-          {intel.shouldBid ? "PUJAR" : "NO PUJAR"}
+          {intel.shouldBid ? "RECOMENDADO" : "NO RECOMENDADO"}
         </b>
-        <DetailButton onClick={() => onDetails(player)} />
+
+        <button
+          type="button"
+          className="chip-operation-button bid"
+          onClick={() =>
+            onBid(
+              player
+            )
+          }
+        >
+          💰 Pujar
+        </button>
+
+        <DetailButton
+          onClick={() =>
+            onDetails(
+              player
+            )
+          }
+        />
       </div>
     </article>
   );
@@ -2131,6 +2640,21 @@ export default function App() {
   const [selectedXIPlayer, setSelectedXIPlayer] = useState(null);
   const [selectedRival, setSelectedRival] = useState(null);
 
+  const [
+    realAction,
+    setRealAction,
+  ] = useState(null);
+
+  const [
+    realActionLoading,
+    setRealActionLoading,
+  ] = useState(false);
+
+  const [
+    realActionError,
+    setRealActionError,
+  ] = useState("");
+
   const [notificationPermission, setNotificationPermission] = useState(() => {
     if (typeof window === "undefined" || !("Notification" in window)) {
       return "unsupported";
@@ -2473,6 +2997,313 @@ const filteredMarket =
     };
   }, [nextMarketChangeAt, loadData, pushToast]);
 
+
+const openSellAction =
+  useCallback(
+    (player) => {
+      setSelectedTeamPlayer(
+        null
+      );
+
+      setSelectedXIPlayer(
+        null
+      );
+
+      setRealActionError(
+        ""
+      );
+
+      setRealAction({
+        type:
+          "sell",
+
+        player,
+
+        defaultAmount:
+          Number(
+            player?.price ||
+            0
+          ),
+      });
+    },
+    []
+  );
+
+const openBidAction =
+  useCallback(
+    (player) => {
+      setSelectedMarketPlayer(
+        null
+      );
+
+      const listed =
+        Number(
+          player
+            ?.marketIntelligence
+            ?.listedPrice ||
+          player
+            ?.salePrice ||
+          player
+            ?.price ||
+          0
+        );
+
+      const recommended =
+        Number(
+          player
+            ?.marketIntelligence
+            ?.recommendedMaxBid ||
+          listed
+        );
+
+      const maxBid =
+        Number(
+          data
+            ?.finances
+            ?.maximumBid ||
+          0
+        );
+
+      let defaultAmount =
+        Math.max(
+          listed,
+          recommended
+        );
+
+      if (
+        maxBid > 0
+      ) {
+        defaultAmount =
+          Math.min(
+            defaultAmount,
+            maxBid
+          );
+      }
+
+      setRealActionError(
+        ""
+      );
+
+      setRealAction({
+        type:
+          "bid",
+
+        player,
+
+        defaultAmount:
+          Math.max(
+            1,
+            Math.round(
+              defaultAmount
+            )
+          ),
+      });
+    },
+    [
+      data
+        ?.finances
+        ?.maximumBid,
+    ]
+  );
+
+const executeRealAction =
+  useCallback(
+    async ({
+      amount,
+      rejectOffers,
+    }) => {
+      if (
+        !realAction ||
+        realActionLoading
+      ) {
+        return;
+      }
+
+      setRealActionLoading(
+        true
+      );
+
+      setRealActionError(
+        ""
+      );
+
+      try {
+        const isBid =
+          realAction.type ===
+          "bid";
+
+        const endpoint =
+          isBid
+            ? "/api/actions/bid"
+            : "/api/actions/sell";
+
+        const payload =
+          isBid
+            ? {
+                confirm:
+                  true,
+
+                playerId:
+                  realAction
+                    .player
+                    .id,
+
+                amount:
+                  Math.round(
+                    Number(
+                      amount
+                    )
+                  ),
+              }
+            : {
+                confirm:
+                  true,
+
+                playerId:
+                  realAction
+                    .player
+                    .id,
+
+                price:
+                  Math.round(
+                    Number(
+                      amount
+                    )
+                  ),
+
+                rejectOffers:
+                  Boolean(
+                    rejectOffers
+                  ),
+              };
+
+        /*
+         * Una única petición por confirmación.
+         * No reintentamos automáticamente acciones reales.
+         */
+        const response =
+          await fetch(
+            endpoint,
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify(
+                  payload
+                ),
+            }
+          );
+
+        const body =
+          await response.json();
+
+        if (
+          !response.ok ||
+          !body?.ok
+        ) {
+          throw new Error(
+            body?.message ||
+            "Biwenger rechazó la operación."
+          );
+        }
+
+        const playerName =
+          realAction
+            .player
+            .name;
+
+        if (isBid) {
+          pushToast(
+            `Puja enviada · ${playerName}`,
+            `Has enviado una puja real de ${formatMoney(
+              amount
+            )} a Biwenger.`,
+            "market",
+            {
+              eventType:
+                "action",
+
+              icon:
+                "💰",
+
+              playerId:
+                realAction
+                  .player
+                  .id,
+
+              playerName,
+
+              actorName:
+                data
+                  ?.user
+                  ?.name ||
+                "Tú",
+            }
+          );
+        } else {
+          pushToast(
+            `Jugador puesto a la venta · ${playerName}`,
+            `${playerName} se ha enviado al mercado por ${formatMoney(
+              amount
+            )}.`,
+            "market",
+            {
+              eventType:
+                "action",
+
+              icon:
+                "🏷",
+
+              playerId:
+                realAction
+                  .player
+                  .id,
+
+              playerName,
+
+              actorName:
+                data
+                  ?.user
+                  ?.name ||
+                "Tú",
+            }
+          );
+        }
+
+        setRealAction(
+          null
+        );
+
+        await loadData({
+          silent:
+            true,
+        });
+      } catch (error) {
+        setRealActionError(
+          error?.message ||
+          "No se pudo completar la operación."
+        );
+      } finally {
+        setRealActionLoading(
+          false
+        );
+      }
+    },
+    [
+      realAction,
+      realActionLoading,
+      data,
+      pushToast,
+      loadData,
+    ]
+  );
+
   const enableNotifications = useCallback(async () => {
     if (!("Notification" in window)) {
       setNotificationPermission("unsupported");
@@ -2565,7 +3396,12 @@ const filteredMarket =
 
           <section className="team-chip-grid">
             {(data?.squad || []).map((player) => (
-              <TeamChip player={player} key={player.id} onDetails={setSelectedTeamPlayer} />
+              <TeamChip
+                player={player}
+                key={player.id}
+                onDetails={setSelectedTeamPlayer}
+                onSell={openSellAction}
+              />
             ))}
           </section>
         </main>
@@ -2614,6 +3450,7 @@ const filteredMarket =
                   player={player}
                   key={`${player.id}-${player.ownerId}`}
                   onDetails={setSelectedMarketPlayer}
+                  onBid={openBidAction}
                   now={now}
                 />
               ))
@@ -2640,7 +3477,7 @@ const filteredMarket =
       )}
 
       <footer>
-        <span>Modo solo lectura · No realiza operaciones en Biwenger</span>
+        <span>Operaciones reales activadas · Siempre requieren confirmación</span>
         <span>
           Última sincronización: {data?.syncedAt ? new Date(data.syncedAt).toLocaleString("es-BO") : "-"}
         </span>
@@ -2667,9 +3504,71 @@ const filteredMarket =
   }
 />
 
-      <PlayerDetailModal player={selectedTeamPlayer} context="team" now={now} onClose={() => setSelectedTeamPlayer(null)} />
-      <PlayerDetailModal player={selectedMarketPlayer} context="market" now={now} onClose={() => setSelectedMarketPlayer(null)} />
-      <PlayerDetailModal player={xiPlayerFull} context="team" now={now} onClose={() => setSelectedXIPlayer(null)} />
+      <PlayerDetailModal
+        player={selectedTeamPlayer}
+        context="team"
+        now={now}
+        onSell={openSellAction}
+        onClose={() =>
+          setSelectedTeamPlayer(
+            null
+          )
+        }
+      />
+      <PlayerDetailModal
+        player={selectedMarketPlayer}
+        context="market"
+        now={now}
+        onBid={openBidAction}
+        onClose={() =>
+          setSelectedMarketPlayer(
+            null
+          )
+        }
+      />
+      <PlayerDetailModal
+        player={xiPlayerFull}
+        context="team"
+        now={now}
+        onSell={openSellAction}
+        onClose={() =>
+          setSelectedXIPlayer(
+            null
+          )
+        }
+      />
+
+<RealActionModal
+  action={
+    realAction
+  }
+  finances={
+    data?.finances
+  }
+  loading={
+    realActionLoading
+  }
+  error={
+    realActionError
+  }
+  onClose={() => {
+    if (
+      !realActionLoading
+    ) {
+      setRealAction(
+        null
+      );
+
+      setRealActionError(
+        ""
+      );
+    }
+  }}
+  onConfirm={
+    executeRealAction
+  }
+/>
+
       <RivalDetailModal rival={selectedRival} balanceHidden={data?.league?.settings?.balanceHidden} onClose={() => setSelectedRival(null)} />
     </div>
   );

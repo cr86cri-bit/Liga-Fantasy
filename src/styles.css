@@ -3591,3 +3591,368 @@ footer {
     gap: 2px;
   }
 }
+
+
+/* =========================================================
+   OPERACIONES REALES DE BIWENGER
+   ========================================================= */
+
+.chip-action-row {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+  gap: 6px;
+  align-items: end;
+}
+
+.chip-action-row
+  .detail-button {
+  margin-top: 8px;
+}
+
+.chip-operation-button,
+.operation-button {
+  border: 1px solid;
+  cursor: pointer;
+  font-weight: 900;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease;
+}
+
+.chip-operation-button {
+  min-height: 30px;
+  margin-top: 8px;
+  padding: 0 9px;
+  border-radius: 8px;
+  font-size: 8px;
+  white-space: nowrap;
+}
+
+.chip-operation-button.sell,
+.operation-button.sell {
+  border-color: rgba(231, 184, 69, 0.42);
+  background: rgba(92, 67, 18, 0.34);
+  color: #ffd16b;
+}
+
+.chip-operation-button.bid,
+.operation-button.bid {
+  border-color: rgba(81, 226, 132, 0.46);
+  background: rgba(24, 91, 46, 0.42);
+  color: #8bf0ac;
+}
+
+.chip-operation-button:hover,
+.operation-button:hover {
+  transform: translateY(-1px);
+}
+
+.market-chip-action
+  .chip-operation-button {
+  width: 100%;
+  margin-top: 7px;
+}
+
+.player-detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.operation-button {
+  min-height: 37px;
+  padding: 0 13px;
+  border-radius: 10px;
+  font-size: 9px;
+}
+
+.operation-button span {
+  margin-right: 5px;
+}
+
+.real-action-warning {
+  display: flex;
+  gap: 11px;
+  padding: 13px;
+  border: 1px solid rgba(255, 195, 73, 0.35);
+  border-radius: 12px;
+  background: rgba(92, 60, 10, 0.22);
+}
+
+.real-action-warning
+  > span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 10px;
+  background: #4a3511;
+  color: #ffd068;
+  font-size: 18px;
+}
+
+.real-action-warning strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #ffd577;
+  font-size: 10px;
+}
+
+.real-action-warning p {
+  margin: 0;
+  color: #a88d55;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.real-action-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 13px;
+  padding: 11px;
+  border: 1px solid #1c3c29;
+  border-radius: 12px;
+  background: #0a1d11;
+}
+
+.real-action-player h3 {
+  margin: 5px 0 2px;
+  font-size: 17px;
+}
+
+.real-action-player
+  > div
+  > span {
+  color: #6d8175;
+  font-size: 9px;
+}
+
+.real-action-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.real-action-amount {
+  display: block;
+  margin-top: 14px;
+}
+
+.real-action-amount
+  > span {
+  display: block;
+  margin-bottom: 6px;
+  color: #809387;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.real-action-input-wrap {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    40px;
+  overflow: hidden;
+  border: 1px solid #315c41;
+  border-radius: 11px;
+  background: #07180e;
+}
+
+.real-action-input-wrap
+  input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 13px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f2fff6;
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.real-action-input-wrap
+  b {
+  display: grid;
+  place-items: center;
+  border-left: 1px solid #284a36;
+  color: #6fe796;
+}
+
+.real-action-amount
+  > small {
+  display: block;
+  margin-top: 5px;
+  color: #75897c;
+  font-size: 9px;
+}
+
+.real-action-note {
+  margin-top: 10px;
+  padding: 9px 10px;
+  border: 1px solid;
+  border-radius: 9px;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.real-action-note.warning {
+  border-color: #5f4b1d;
+  background: #2b220f;
+  color: #e7c76d;
+}
+
+.real-action-note.danger {
+  border-color: #6f3238;
+  background: #32181c;
+  color: #ff858c;
+}
+
+.real-action-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 10px 11px;
+  border: 1px solid #2c593d;
+  border-radius: 10px;
+  background: #0c2416;
+  cursor: pointer;
+}
+
+.real-action-checkbox.secondary-check {
+  border-color: #57481f;
+  background: #211c0f;
+}
+
+.real-action-checkbox
+  input {
+  width: 16px;
+  height: 16px;
+  margin: 1px 0 0;
+  accent-color: #56e88a;
+}
+
+.real-action-checkbox
+  strong,
+.real-action-checkbox
+  small {
+  display: block;
+}
+
+.real-action-checkbox
+  strong {
+  font-size: 9px;
+}
+
+.real-action-checkbox
+  small {
+  margin-top: 3px;
+  color: #708477;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.real-action-error {
+  margin-top: 11px;
+  padding: 10px;
+  border: 1px solid #75343a;
+  border-radius: 9px;
+  background: #35191d;
+  color: #ff8a91;
+  font-size: 9px;
+}
+
+.real-action-footer {
+  display: grid;
+  grid-template-columns:
+    auto
+    minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.real-action-cancel,
+.real-action-confirm {
+  min-height: 42px;
+  border: 1px solid;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.real-action-cancel {
+  padding: 0 15px;
+  border-color: #34483b;
+  background: #16221a;
+  color: #9aac9f;
+}
+
+.real-action-confirm.bid {
+  border-color: #3c9b5d;
+  background:
+    linear-gradient(
+      135deg,
+      #1c6b39,
+      #15552d
+    );
+  color: #baffce;
+}
+
+.real-action-confirm.sell {
+  border-color: #9b7832;
+  background:
+    linear-gradient(
+      135deg,
+      #6d4c16,
+      #51390f
+    );
+  color: #ffe39c;
+}
+
+.real-action-confirm:disabled,
+.real-action-cancel:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+@media (max-width: 650px) {
+  .real-action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .real-action-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .real-action-cancel {
+    order: 2;
+  }
+
+  .player-detail-actions {
+    justify-content: stretch;
+  }
+
+  .operation-button {
+    width: 100%;
+  }
+
+  .chip-action-row {
+    grid-template-columns: 1fr;
+  }
+
+  .chip-operation-button {
+    width: 100%;
+    margin-top: 0;
+  }
+}

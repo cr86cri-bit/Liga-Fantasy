@@ -128,3 +128,37 @@ retirada manual, por eso no se inventa esa causa.
 Mercado incorpora un botón **Historial de avisos**. Se guardan hasta 120
 notificaciones en `localStorage` y permanecen después de recargar la página.
 El historial se puede limpiar desde su modal.
+
+## Operaciones reales de Biwenger
+
+Esta versión incorpora:
+
+- **Pujar** por jugadores del mercado.
+- **Poner a la venta** jugadores de tu plantilla.
+
+Ninguna operación se ejecuta al pulsar el primer botón. Siempre se abre un
+modal con el jugador, el importe y una casilla obligatoria de confirmación.
+
+El backend también exige `confirm: true`.
+
+### Pujas
+
+Antes de enviar la puja, el servidor vuelve a consultar `/market` para verificar
+que el jugador sigue disponible, determina de nuevo quién lo ofrece y comprueba
+la puja máxima actual.
+
+La escritura se envía a `POST /api/v2/offers` como oferta `purchase`.
+
+### Venta
+
+Antes de vender, el servidor vuelve a consultar tu plantilla para confirmar
+que el jugador sigue perteneciendo a tu usuario.
+
+La escritura se envía a `POST /api/v2/market` con `type: "sell"`.
+
+La opción **Rechazar ofertas existentes** está desactivada por defecto.
+
+### Importante
+
+Las escrituras no se reintentan automáticamente. Los endpoints de Biwenger son
+internos/no oficiales y pueden cambiar.

@@ -129,6 +129,135 @@ app.get(
   }
 );
 
+
+app.post(
+  "/api/actions/bid",
+  async (req, res) => {
+    try {
+      if (
+        req.body?.confirm !==
+        true
+      ) {
+        return res
+          .status(400)
+          .json({
+            ok: false,
+
+            message:
+              "La puja requiere confirmación explícita.",
+          });
+      }
+
+      const data =
+        await getClient()
+          .pujarJugador({
+            playerId:
+              Number(
+                req.body
+                  ?.playerId
+              ),
+
+            amount:
+              Number(
+                req.body
+                  ?.amount
+              ),
+          });
+
+      return res.json({
+        ok: true,
+
+        message:
+          "Puja enviada a Biwenger.",
+
+        data,
+      });
+    } catch (error) {
+      console.error(
+        "[Biwenger bid]",
+        error
+      );
+
+      return res
+        .status(400)
+        .json({
+          ok: false,
+
+          message:
+            error?.message ||
+            "No se pudo realizar la puja.",
+        });
+    }
+  }
+);
+
+app.post(
+  "/api/actions/sell",
+  async (req, res) => {
+    try {
+      if (
+        req.body?.confirm !==
+        true
+      ) {
+        return res
+          .status(400)
+          .json({
+            ok: false,
+
+            message:
+              "La venta requiere confirmación explícita.",
+          });
+      }
+
+      const data =
+        await getClient()
+          .ponerJugadorVenta({
+            playerId:
+              Number(
+                req.body
+                  ?.playerId
+              ),
+
+            price:
+              Number(
+                req.body
+                  ?.price
+              ),
+
+            rejectOffers:
+              Boolean(
+                req.body
+                  ?.rejectOffers
+              ),
+          });
+
+      return res.json({
+        ok: true,
+
+        message:
+          "Jugador enviado al mercado de Biwenger.",
+
+        data,
+      });
+    } catch (error) {
+      console.error(
+        "[Biwenger sell]",
+        error
+      );
+
+      return res
+        .status(400)
+        .json({
+          ok: false,
+
+          message:
+            error?.message ||
+            "No se pudo poner el jugador a la venta.",
+        });
+    }
+  }
+);
+
 app.get("/api/dashboard", async (_req, res) => {
   try {
     const data =
