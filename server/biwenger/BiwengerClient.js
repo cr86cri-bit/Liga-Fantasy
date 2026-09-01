@@ -363,26 +363,50 @@ export class BiwengerClient {
         const ownerId =
           Number(sale?.user?.id || 0);
 
+        const sellerType =
+          ownerId > 0
+            ? "user"
+            : "market";
+
+        const sellerName =
+          sellerType === "market"
+            ? "Mercado Biwenger"
+            : sale?.user?.name ||
+              `Usuario ${ownerId}`;
+
         return {
           ...player,
+          saleId:
+            Number(sale?.id || 0) || null,
           salePrice: Number(
             sale?.price ||
               player.price ||
               0
           ),
           ownerId,
-          ownerName:
-            sale?.user?.name ||
-            "Mercado",
+          ownerName: sellerName,
+          sellerType,
+          seller: {
+            type: sellerType,
+            id: ownerId || null,
+            name: sellerName,
+          },
           isMine:
             ownerId === Number(this.userId),
           until:
-            sale?.until || null,
+            normalizarTimestampSeconds(
+              sale?.until
+            ),
           date:
-            sale?.date || null,
+            normalizarTimestampSeconds(
+              sale?.date
+            ),
         };
       })
       .filter(Boolean);
+
+    const marketMeta =
+      crearResumenMercado(rawMarket);
 
     const market = enriquecerMercado(
       rawMarket,
@@ -440,6 +464,7 @@ export class BiwengerClient {
       finances,
       squad,
       market,
+      marketMeta,
       bestXI,
       rivals,
     };
@@ -476,6 +501,94 @@ export class BiwengerClient {
       return { message: text };
     }
   }
+}
+
+
+function normalizarTimestampSeconds(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return null;
+  }
+
+  if (
+    typeof value === "number" ||
+    /^\d+(?:\.\d+)?$/.test(String(value).trim())
+  ) {
+    const numeric = Number(value);
+
+    if (!Number.isFinite(numeric) || numeric <= 0) {
+      return null;
+    }
+
+    /*
+     * Epoch en milisegundos -> segundos.
+     */
+    if (numeric > 10_000_000_000) {
+      return Math.floor(numeric / 1000);
+    }
+
+    return Math.floor(numeric);
+  }
+
+  const parsed = Date.parse(String(value));
+
+  return Number.isFinite(parsed)
+    ? Math.floor(parsed / 1000)
+    : null;
+}
+
+function crearResumenMercado(marketPlayers) {
+  const now = Math.floor(Date.now() / 1000);
+
+  const visible = (marketPlayers || []).filter(
+    (player) => !player.isMine
+  );
+
+  const systemListings = visible.filter(
+    (player) => player.sellerType === "market"
+  );
+
+  const managerListings = visible.filter(
+    (player) => player.sellerType === "user"
+  );
+
+  const futureSystemExpirations = systemListings
+    .map((player) => Number(player.until || 0))
+    .filter((timestamp) => timestamp > now);
+
+  const futureAllExpirations = visible
+    .map((player) => Number(player.until || 0))
+    .filter((timestamp) => timestamp > now);
+
+  /*
+   * En el mercado normal, los jugadores del sistema suelen
+   * compartir o acercarse al momento de rotación. Usamos el
+   * vencimiento futuro más próximo de esas ofertas como contador
+   * general. Si no hay ofertas del sistema, usamos el vencimiento
+   * más próximo disponible.
+   */
+  const expirations = futureSystemExpirations.length
+    ? futureSystemExpirations
+    : futureAllExpirations;
+
+  return {
+    totalListings: visible.length,
+    systemListings: systemListings.length,
+    managerListings: managerListings.length,
+    nextMarketChangeAt:
+      expirations.length
+        ? Math.min(...expirations)
+        : null,
+    nextMarketChangeSource:
+      futureSystemExpirations.length
+        ? "system-listing-expiry"
+        : futureAllExpirations.length
+          ? "listing-expiry"
+          : "unavailable",
+  };
 }
 
 function limpiarToken(token) {
