@@ -4968,8 +4968,8 @@ footer {
 .football-pitch-synced
   .pitch-line {
   /*
-   * Los elementos ya llegan en el mismo orden que playersID.
-   * No usamos order CSS ni reordenamientos visuales.
+   * El orden izquierda→derecha ya llega transformado al
+   * patrón visual de slots de Biwenger.
    */
   direction: ltr;
 }
@@ -5369,5 +5369,269 @@ footer {
 @media (max-width: 700px) {
   .movements-tab-counts {
     justify-content: flex-start;
+  }
+}
+
+
+/* =========================================================
+   XI · POSICIONES BIWENGER + ESTADO + NIVEL
+   ========================================================= */
+
+.lineup-health-alert {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 0.8fr)
+    minmax(0, 2fr);
+  gap: 10px;
+  margin: 12px 0;
+  padding: 11px;
+  border: 1px solid #6f4c26;
+  border-radius: 13px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(75, 42, 15, 0.75),
+      rgba(38, 26, 12, 0.88)
+    );
+}
+
+.lineup-health-alert-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lineup-health-alert-head > span {
+  display: grid;
+  place-items: center;
+  width: 39px;
+  height: 39px;
+  flex: 0 0 39px;
+  border-radius: 10px;
+  background: #6b471b;
+  color: #ffe098;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.lineup-health-alert-head strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #ffe0a0;
+  font-size: 12px;
+}
+
+.lineup-health-alert-head p {
+  margin: 0;
+  color: #bca071;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.lineup-health-alert-list {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.lineup-health-alert-player {
+  display: grid;
+  grid-template-columns:
+    42px
+    minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #714838;
+  border-radius: 9px;
+  background: rgba(45, 20, 15, 0.75);
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.lineup-health-alert-player.status-doubt {
+  border-color: #756126;
+  background: rgba(54, 45, 13, 0.72);
+}
+
+.lineup-health-alert-player.status-sanctioned,
+.lineup-health-alert-player.status-discarded {
+  border-color: #6d3035;
+}
+
+.lineup-health-alert-player strong,
+.lineup-health-alert-player small {
+  display: block;
+}
+
+.lineup-health-alert-player strong {
+  overflow: hidden;
+  color: #ffc0ae;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lineup-health-alert-player.status-doubt strong {
+  color: #ffe59a;
+}
+
+.lineup-health-alert-player small {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #a77e70;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pitch-player-alert
+  .pitch-player-photo::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  z-index: -1;
+  border: 1px solid rgba(248, 95, 95, 0.55);
+  border-radius: 50%;
+  box-shadow:
+    0 0 18px rgba(225, 63, 67, 0.28);
+}
+
+.pitch-player-alert.status-doubt
+  .pitch-player-photo::after {
+  border-color: rgba(240, 196, 68, 0.55);
+  box-shadow:
+    0 0 18px rgba(229, 184, 49, 0.24);
+}
+
+.pitch-health-role {
+  position: absolute;
+  top: -7px;
+  right: -8px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(255, 255, 255, 0.78);
+  border-radius: 50%;
+  background: #dd4d56;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.pitch-health-role.status-doubt {
+  background: #d7a824;
+  color: #211901;
+}
+
+.pitch-health-role.status-sanctioned {
+  background: #c32f37;
+}
+
+.pitch-health-role.status-discarded {
+  background: #6d7470;
+}
+
+.pitch-player > .pitch-points {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(4, 24, 12, 0.62);
+  color: #b9ffd0;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.pitch-player-insights {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.pitch-quality,
+.pitch-availability {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 17px;
+  padding: 0 5px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 6px;
+  font-weight: 950;
+  letter-spacing: 0.02em;
+}
+
+.pitch-quality b {
+  font-size: 6px;
+}
+
+.pitch-quality.quality-great {
+  border-color: #42a963;
+  background: #17492a;
+  color: #aaf4be;
+}
+
+.pitch-quality.quality-good {
+  border-color: #618c3a;
+  background: #263c19;
+  color: #c9e995;
+}
+
+.pitch-quality.quality-average {
+  border-color: #8b7228;
+  background: #3c3215;
+  color: #ecd47d;
+}
+
+.pitch-quality.quality-low {
+  border-color: #6e393d;
+  background: #351d20;
+  color: #e7a1a4;
+}
+
+.pitch-availability.status-injured,
+.pitch-availability.status-sanctioned {
+  border-color: #8a3d42;
+  background: #451f22;
+  color: #ffafb3;
+}
+
+.pitch-availability.status-doubt {
+  border-color: #92762b;
+  background: #433713;
+  color: #ffe08b;
+}
+
+.pitch-availability.status-discarded {
+  border-color: #59625d;
+  background: #2a302c;
+  color: #b8c1bc;
+}
+
+.pitch-slot-label {
+  display: block;
+  margin-top: 4px;
+  color: rgba(210, 237, 219, 0.54);
+  font-size: 6px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 850px) {
+  .lineup-health-alert {
+    grid-template-columns: 1fr;
+  }
+
+  .lineup-health-alert-list {
+    grid-template-columns: 1fr;
   }
 }

@@ -2758,6 +2758,415 @@ function lineupPlayerIds(
     );
 }
 
+/*
+ * Biwenger no pinta los jugadores de una línea usando
+ * playersID directamente de izquierda a derecha.
+ *
+ * El patrón visual observado es "del centro hacia fuera":
+ *
+ * 2 jugadores:  [1, 0]
+ * 3 jugadores:  [2, 0, 1]
+ * 4 jugadores:  [3, 1, 0, 2]
+ * 5 jugadores:  [4, 2, 0, 1, 3]
+ *
+ * Esto explica exactamente el caso actual:
+ * - DL: Hugo González | Hugo Duro
+ * - MC: Álex | Mendoza | Neto | Marc
+ * - DF: Angeliño | Logan | Vivian | Boiro
+ *
+ * En vez de dejar una tabla fija calculamos la posición
+ * virtual de cada slot y ordenamos de izquierda a derecha.
+ */
+function biwengerSlotOffset(
+  index,
+  total
+) {
+  if (
+    total <=
+    1
+  ) {
+    return 0;
+  }
+
+  if (
+    total %
+      2 ===
+    1
+  ) {
+    if (
+      index ===
+      0
+    ) {
+      return 0;
+    }
+
+    const step =
+      Math.ceil(
+        index /
+        2
+      );
+
+    return (
+      index %
+        2 ===
+      1
+        ? step
+        : -step
+    );
+  }
+
+  const step =
+    Math.floor(
+      index /
+      2
+    ) +
+    0.5;
+
+  return (
+    index %
+      2 ===
+    0
+      ? step
+      : -step
+  );
+}
+
+function orderBiwengerLineForPitch(
+  players
+) {
+  const list =
+    [
+      ...(
+        players ||
+        []
+      ),
+    ];
+
+  if (
+    list.length <=
+    1
+  ) {
+    return list;
+  }
+
+  return list
+    .map(
+      (
+        player,
+        index
+      ) => ({
+        player,
+
+        x:
+          biwengerSlotOffset(
+            index,
+            list.length
+          ),
+      })
+    )
+    .sort(
+      (
+        left,
+        right
+      ) =>
+        left.x -
+        right.x
+    )
+    .map(
+      (item) =>
+        item.player
+    );
+}
+
+function lineupAvailabilityInfo(
+  player
+) {
+  const status =
+    String(
+      player?.status ||
+      "unknown"
+    ).toLowerCase();
+
+  const map = {
+    injured: {
+      label:
+        "Lesionado",
+
+      shortLabel:
+        "LESIONADO",
+
+      icon:
+        "✚",
+
+      className:
+        "injured",
+    },
+
+    doubt: {
+      label:
+        "Duda",
+
+      shortLabel:
+        "DUDA",
+
+      icon:
+        "?",
+
+      className:
+        "doubt",
+    },
+
+    sanctioned: {
+      label:
+        "Sancionado",
+
+      shortLabel:
+        "SANCIONADO",
+
+      icon:
+        "!",
+
+      className:
+        "sanctioned",
+    },
+
+    discarded: {
+      label:
+        "Descartado",
+
+      shortLabel:
+        "DESCARTADO",
+
+      icon:
+        "×",
+
+      className:
+        "discarded",
+    },
+  };
+
+  return (
+    map[
+      status
+    ] ||
+    null
+  );
+}
+
+function buildPositionQualityMap(
+  squad
+) {
+  const groups =
+    new Map();
+
+  for (
+    const player of
+      squad ||
+      []
+  ) {
+    const position =
+      player?.position;
+
+    if (
+      ![
+        "AR",
+        "DF",
+        "MC",
+        "DL",
+      ].includes(
+        position
+      )
+    ) {
+      continue;
+    }
+
+    if (
+      !groups.has(
+        position
+      )
+    ) {
+      groups.set(
+        position,
+        []
+      );
+    }
+
+    groups.get(
+      position
+    ).push(
+      player
+    );
+  }
+
+  const result =
+    new Map();
+
+  for (
+    const [
+      position,
+      players,
+    ] of
+      groups.entries()
+  ) {
+    const sorted =
+      [
+        ...players,
+      ].sort(
+        (
+          left,
+          right
+        ) => {
+          const scoreDiff =
+            Number(
+              right
+                ?.analysis
+                ?.score ||
+              0
+            ) -
+            Number(
+              left
+                ?.analysis
+                ?.score ||
+              0
+            );
+
+          if (
+            scoreDiff !==
+            0
+          ) {
+            return scoreDiff;
+          }
+
+          return (
+            Number(
+              right
+                ?.analysis
+                ?.ppg ||
+              0
+            ) -
+            Number(
+              left
+                ?.analysis
+                ?.ppg ||
+              0
+            )
+          );
+        }
+      );
+
+    sorted.forEach(
+      (
+        player,
+        index
+      ) => {
+        const score =
+          Number(
+            player
+              ?.analysis
+              ?.score ||
+            0
+          );
+
+        const rank =
+          index +
+          1;
+
+        const total =
+          sorted.length;
+
+        let label =
+          "A mejorar";
+
+        let shortLabel =
+          "BAJO";
+
+        let className =
+          "low";
+
+        if (
+          score >=
+          68
+        ) {
+          label =
+            "Muy bueno";
+
+          shortLabel =
+            "MUY BUENO";
+
+          className =
+            "great";
+        } else if (
+          score >=
+          55
+        ) {
+          label =
+            "Bueno";
+
+          shortLabel =
+            "BUENO";
+
+          className =
+            "good";
+        } else if (
+          score >=
+          42
+        ) {
+          label =
+            "Correcto";
+
+          shortLabel =
+            "CORRECTO";
+
+          className =
+            "average";
+        }
+
+        /*
+         * Ser el mejor jugador de su posición en la plantilla
+         * mejora como máximo un escalón la etiqueta, pero nunca
+         * transforma un análisis muy bajo en "Muy bueno".
+         */
+        if (
+          rank ===
+            1 &&
+          total >
+            1 &&
+          score >=
+            50 &&
+          className ===
+            "average"
+        ) {
+          label =
+            "Bueno";
+
+          shortLabel =
+            "BUENO";
+
+          className =
+            "good";
+        }
+
+        result.set(
+          Number(
+            player.id
+          ),
+          {
+            position,
+            rank,
+            total,
+            score,
+            label,
+            shortLabel,
+            className,
+          }
+        );
+      }
+    );
+  }
+
+  return result;
+}
+
 function sortLineupCandidates(
   players,
   bestXI
@@ -3495,6 +3904,43 @@ function BestXI({
       ]
     );
 
+
+const positionQualityMap =
+  useMemo(
+    () =>
+      buildPositionQualityMap(
+        fullSquad
+      ),
+    [
+      fullSquad,
+    ]
+  );
+
+const lineupWarnings =
+  useMemo(
+    () =>
+      selectedPlayers
+        .map(
+          (player) => ({
+            player,
+
+            availability:
+              lineupAvailabilityInfo(
+                player
+              ),
+          })
+        )
+        .filter(
+          (item) =>
+            Boolean(
+              item.availability
+            )
+        ),
+    [
+      selectedPlayers,
+    ]
+  );
+
   const counts =
     useMemo(
       () => ({
@@ -3981,36 +4427,45 @@ function BestXI({
     );
 
   /*
-   * Como pitchPlayers ya está en orden playersID, cada filter
-   * conserva el mismo orden horizontal que devuelve Biwenger.
+   * playersID utiliza el orden interno de slots de Biwenger.
+   * Cada línea se transforma al orden visual izquierda→derecha
+   * que emplea el campo de Biwenger.
    */
   const groups = {
     DL:
-      pitchPlayers.filter(
-        (player) =>
-          player.position ===
-          "DL"
+      orderBiwengerLineForPitch(
+        pitchPlayers.filter(
+          (player) =>
+            player.position ===
+            "DL"
+        )
       ),
 
     MC:
-      pitchPlayers.filter(
-        (player) =>
-          player.position ===
-          "MC"
+      orderBiwengerLineForPitch(
+        pitchPlayers.filter(
+          (player) =>
+            player.position ===
+            "MC"
+        )
       ),
 
     DF:
-      pitchPlayers.filter(
-        (player) =>
-          player.position ===
-          "DF"
+      orderBiwengerLineForPitch(
+        pitchPlayers.filter(
+          (player) =>
+            player.position ===
+            "DF"
+        )
       ),
 
     AR:
-      pitchPlayers.filter(
-        (player) =>
-          player.position ===
-          "AR"
+      orderBiwengerLineForPitch(
+        pitchPlayers.filter(
+          (player) =>
+            player.position ===
+            "AR"
+        )
       ),
   };
 
@@ -4323,6 +4778,68 @@ function BestXI({
         </>
       )}
 
+
+{lineupWarnings.length >
+  0 && (
+  <section className="lineup-health-alert">
+    <div className="lineup-health-alert-head">
+      <span>
+        ⚠
+      </span>
+
+      <div>
+        <strong>
+          Atención con tu alineación
+        </strong>
+
+        <p>
+          Tienes {lineupWarnings.length} titular(es) con un estado que puede afectar a la próxima fecha.
+        </p>
+      </div>
+    </div>
+
+    <div className="lineup-health-alert-list">
+      {lineupWarnings.map(
+        ({
+          player,
+          availability,
+        }) => (
+          <button
+            type="button"
+            key={
+              player.id
+            }
+            className={`lineup-health-alert-player status-${availability.className}`}
+            onClick={() =>
+              onPlayerDetails(
+                player
+              )
+            }
+          >
+            <PlayerPhoto
+              player={
+                player
+              }
+              size="chip"
+            />
+
+            <span>
+              <strong>
+                {availability.label}: {player.name}
+              </strong>
+
+              <small>
+                {player.statusInfo ||
+                  "Revisa su disponibilidad antes del cierre de la jornada."}
+              </small>
+            </span>
+          </button>
+        )
+      )}
+    </div>
+  </section>
+)}
+
       <section className="football-pitch football-pitch-synced">
         <div className="pitch-border" />
         <div className="pitch-half-line" />
@@ -4341,6 +4858,9 @@ function BestXI({
           roles={
             roleState
           }
+          positionQualityMap={
+            positionQualityMap
+          }
           onPlayerDetails={
             onPlayerDetails
           }
@@ -4353,6 +4873,9 @@ function BestXI({
           }
           roles={
             roleState
+          }
+          positionQualityMap={
+            positionQualityMap
           }
           onPlayerDetails={
             onPlayerDetails
@@ -4367,6 +4890,9 @@ function BestXI({
           roles={
             roleState
           }
+          positionQualityMap={
+            positionQualityMap
+          }
           onPlayerDetails={
             onPlayerDetails
           }
@@ -4379,6 +4905,9 @@ function BestXI({
           }
           roles={
             roleState
+          }
+          positionQualityMap={
+            positionQualityMap
           }
           onPlayerDetails={
             onPlayerDetails
@@ -4581,9 +5110,11 @@ function BestXI({
           <strong>
             Sincronizado con Biwenger:
           </strong>{" "}
-          la formación, el orden de los titulares, el capitán y el
-          ariete de esta vista proceden de tu alineación guardada.
-          El botón “Usar recomendado” solo actúa cuando decides editar.
+          la formación, los titulares, capitán y ariete proceden de
+          Biwenger. Además, cada línea aplica el mismo patrón de slots
+          centro→exterior que usa su campo para reproducir correctamente
+          izquierda y derecha. Las etiquetas de nivel comparan al jugador
+          con los compañeros de tu plantilla que juegan en la misma posición.
         </p>
       )}
 
@@ -4667,6 +5198,7 @@ function PitchLine({
   players,
   className,
   roles,
+  positionQualityMap,
   onPlayerDetails,
 }) {
   return (
@@ -4674,7 +5206,10 @@ function PitchLine({
       className={`pitch-line ${className}`}
     >
       {players.map(
-        (player) => {
+        (
+          player,
+          visualIndex
+        ) => {
           const isCaptain =
             Number(
               roles
@@ -4697,11 +5232,49 @@ function PitchLine({
               player.id
             );
 
+          const availability =
+            lineupAvailabilityInfo(
+              player
+            );
+
+          const quality =
+            positionQualityMap
+              ?.get(
+                Number(
+                  player.id
+                )
+              ) ||
+            null;
+
+          const visualSide =
+            players.length ===
+              1
+              ? "CENTRO"
+              : visualIndex ===
+                  0
+                ? "IZQ"
+                : visualIndex ===
+                    players.length -
+                    1
+                  ? "DER"
+                  : "CENTRO";
+
           return (
             <button
-              className="pitch-player"
+              className={`pitch-player ${
+                availability
+                  ? `pitch-player-alert status-${availability.className}`
+                  : ""
+              }`}
               key={
                 player.id
+              }
+              title={
+                availability
+                  ? `${availability.label}: ${player.statusInfo || "Disponibilidad comprometida"}`
+                  : quality
+                    ? `${quality.label} en ${quality.position} · #${quality.rank} de ${quality.total} en tu plantilla`
+                    : player.name
               }
               onClick={() =>
                 onPlayerDetails(
@@ -4728,13 +5301,24 @@ function PitchLine({
                     9
                   </span>
                 )}
+
+                {availability && (
+                  <span
+                    className={`pitch-health-role status-${availability.className}`}
+                    aria-label={
+                      availability.label
+                    }
+                  >
+                    {availability.icon}
+                  </span>
+                )}
               </div>
 
               <strong>
                 {player.name}
               </strong>
 
-              <span>
+              <span className="pitch-points">
                 {Number(
                   player.projectedPoints ||
                   0
@@ -4742,6 +5326,31 @@ function PitchLine({
                   1
                 )} pts
               </span>
+
+              <div className="pitch-player-insights">
+                {quality && (
+                  <span
+                    className={`pitch-quality quality-${quality.className}`}
+                  >
+                    {quality.shortLabel}
+                    <b>
+                      #{quality.rank}/{quality.total}
+                    </b>
+                  </span>
+                )}
+
+                {availability && (
+                  <span
+                    className={`pitch-availability status-${availability.className}`}
+                  >
+                    {availability.shortLabel}
+                  </span>
+                )}
+              </div>
+
+              <small className="pitch-slot-label">
+                {player.position} · {visualSide}
+              </small>
             </button>
           );
         }

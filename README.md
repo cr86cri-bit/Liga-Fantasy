@@ -363,3 +363,33 @@ uso normal o al pulsar Actualizar respetando el cooldown).
 
 Esta corrección **reduce** el consumo de API respecto a la versión anterior,
 porque ya no necesita una consulta independiente para las ofertas.
+
+## Mejor XI: posiciones visuales de Biwenger y alertas
+
+Se corrigió la diferencia de posiciones horizontales entre Liga Fantasy y el
+campo oficial de Biwenger.
+
+`playersID` no se interpreta como una lista izquierda→derecha. La interfaz de
+Biwenger distribuye los slots de una línea desde el centro hacia los extremos.
+Liga Fantasy reproduce ahora ese patrón visual antes de pintar cada línea.
+
+Para 4 jugadores, por ejemplo, el orden interno `[0,1,2,3]` se muestra como
+`[3,1,0,2]`. Este patrón coincide con la alineación actual observada:
+
+- Delantera: Hugo González | Hugo Duro
+- Medio: Álex Calatrava | Mendoza | Neto | Marc Aguado
+- Defensa: Angeliño | Logan Costa | Vivian | Boiro
+
+También se añadieron:
+
+- aviso superior si un titular está lesionado, en duda, sancionado o descartado;
+- icono de alerta directamente sobre el jugador en el campo;
+- motivo de `statusInfo` cuando Biwenger lo proporciona;
+- indicador de nivel por posición;
+- ranking del jugador entre los compañeros de la plantilla que ocupan la misma
+  posición, por ejemplo `BUENO #2/4`;
+- etiqueta de ubicación visual `DF · IZQ`, `MC · CENTRO`, etc.
+
+El nivel por posición utiliza el `analysis.score` ya existente en Liga Fantasy y
+lo complementa con el ranking dentro de la propia plantilla. No genera nuevas
+llamadas a Biwenger y no afecta a la protección anti-rate-limit.
