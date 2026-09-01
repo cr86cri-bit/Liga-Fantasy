@@ -197,3 +197,46 @@ Como ningún archivo actual lo necesitaba, se eliminó. También se eliminó
 
 `server/analytics/` queda únicamente con los módulos reales de análisis:
 jugadores, mercado, fixtures, Mejor XI, rivales, configuración y utilidades.
+
+
+## Protección máxima contra rate limit
+
+La aplicación usa ahora una estrategia muy conservadora:
+
+- Mercado: **5 minutos**
+- Plantilla y saldo: **10 minutos**
+- Rivales: **30 minutos y solo al entrar en Rivales**
+- Catálogo: **6 horas**
+- Contadores: cada segundo localmente
+- Una sola petición real a Biwenger a la vez
+- Separación mínima de **4 segundos** entre peticiones
+- Sin polling cuando la pestaña está en segundo plano
+- Solo una pestaña del navegador hace polling automático
+- Las demás reciben datos mediante BroadcastChannel/localStorage
+- Actualización manual con cooldown de **60 segundos**
+- Dedupe de solicitudes iguales
+- Pujas/ventas sin reintento automático
+
+### Circuit breaker persistente
+
+Ante HTTP 429 o el mensaje de máximo de peticiones:
+
+- se cancela la cola pendiente;
+- se detienen todas las peticiones;
+- el estado queda guardado en `.cache/api-guard.json`;
+- reiniciar Node no elimina la protección;
+- se usa el último dashboard guardado.
+
+Cooldown conservador:
+
+- primer incidente: mínimo 1 hora;
+- segundo reciente: mínimo 6 horas;
+- tercero o posterior: mínimo 24 horas.
+
+### Monitor de API
+
+El dashboard muestra peticiones reales de la última hora y del día,
+peticiones evitadas por caché, cola actual, última petición, uso por endpoint,
+próxima actualización y qué pestaña es la líder.
+
+El historial se guarda en `.cache/api-usage.json`.

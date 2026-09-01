@@ -52,29 +52,55 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-app.get("/api/connection", async (_req, res) => {
-  try {
-    const biwenger = getClient();
-    await biwenger.inicializar();
+app.get(
+  "/api/connection",
+  async (_req, res) => {
+    try {
+      /*
+       * Esta ruta ya NO fuerza una llamada /account.
+       * Devuelve el estado conocido/caché del sistema.
+       */
+      const data =
+        await getClient()
+          .getSystemStatus();
 
-    res.json({
-      ok: true,
-      data: {
-        leagueId: biwenger.leagueId,
-        userId: biwenger.userId,
-        leagueName: biwenger.league?.name,
-        score: biwenger.score,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      ok: false,
-      message:
-        error?.message ||
-        "No se pudo conectar con Biwenger.",
-    });
+      res.json({
+        ok: true,
+        data,
+      });
+    } catch (error) {
+      res.status(500).json({
+        ok: false,
+        message:
+          error?.message ||
+          "No se pudo leer el estado de conexión.",
+      });
+    }
   }
-});
+);
+
+app.get(
+  "/api/system",
+  async (_req, res) => {
+    try {
+      const data =
+        await getClient()
+          .getSystemStatus();
+
+      res.json({
+        ok: true,
+        data,
+      });
+    } catch (error) {
+      res.status(500).json({
+        ok: false,
+        message:
+          error?.message ||
+          "No se pudo leer el estado de protección.",
+      });
+    }
+  }
+);
 
 app.get(
   "/api/sofascore/player",
@@ -266,9 +292,16 @@ app.get("/api/dashboard", async (req, res) => {
         "smart"
       ).trim();
 
+    const includeRivals =
+      String(
+        req.query?.includeRivals ||
+        ""
+      ) === "1";
+
     const data =
       await getClient().obtenerDashboard({
         refresh,
+        includeRivals,
       });
 
     res.json({

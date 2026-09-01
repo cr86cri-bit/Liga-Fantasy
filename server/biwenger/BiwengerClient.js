@@ -27,30 +27,74 @@ import {
   saveDashboardSnapshot,
 } from "../cache/dashboardStore.js";
 
+import {
+  ApiGuard,
+} from "../guard/ApiGuard.js";
+
+import {
+  RequestScheduler,
+} from "../guard/RequestScheduler.js";
+
+import {
+  ApiUsageTracker,
+} from "../guard/ApiUsageTracker.js";
+
 const API_URL =
   "https://biwenger.as.com/api/v2";
 
 const CF_API_URL =
   "https://cf.biwenger.com/api/v2";
 
+/*
+ * Política conservadora.
+ *
+ * Mercado       5 min
+ * Mi equipo    10 min
+ * Rivales      30 min
+ * Catálogo      6 h
+ */
 const TTL = {
-  market: 3 * 60 * 1000,
-  ownUser: 5 * 60 * 1000,
-  leagueUsers: 15 * 60 * 1000,
-  rivalSquad: 15 * 60 * 1000,
-  catalog: 60 * 60 * 1000,
+  market:
+    5 * 60 * 1000,
+
+  ownUser:
+    10 * 60 * 1000,
+
+  leagueUsers:
+    30 * 60 * 1000,
+
+  rivalSquad:
+    30 * 60 * 1000,
+
+  catalog:
+    6 *
+    60 *
+    60 *
+    1000,
 };
 
+/*
+ * Incluso un refresh manual no salta estas ventanas.
+ */
 const MIN_RELOAD = {
-  market: 30 * 1000,
-  ownUser: 60 * 1000,
-  leagueUsers: 5 * 60 * 1000,
-  rivalSquad: 5 * 60 * 1000,
-  catalog: 10 * 60 * 1000,
+  market:
+    60 * 1000,
+
+  ownUser:
+    2 * 60 * 1000,
+
+  leagueUsers:
+    10 * 60 * 1000,
+
+  rivalSquad:
+    10 * 60 * 1000,
+
+  catalog:
+    60 * 60 * 1000,
 };
 
-const DEFAULT_RATE_LIMIT_COOLDOWN =
-  30 * 60 * 1000;
+const REQUEST_GAP_MS =
+  4000;
 
 export class BiwengerClient {
   constructor({
@@ -65,30 +109,102 @@ export class BiwengerClient {
       );
     }
 
-    this.token = limpiarToken(token);
-    this.version = String(version || "").trim();
-    this.leagueName = String(leagueName || "").trim();
-    this.score = String(score || "1").trim();
+    this.token =
+      limpiarToken(
+        token
+      );
 
-    this.account = null;
-    this.league = null;
-    this.leagueId = null;
-    this.userId = null;
+    this.version =
+      String(
+        version ||
+        ""
+      ).trim();
 
-    this.cache = new SmartCache();
-    this.rateLimitUntil = 0;
+    this.leagueName =
+      String(
+        leagueName ||
+        ""
+      ).trim();
 
-    this.lastDashboard = null;
-    this.persistedDashboard = null;
-    this.persistedDashboardLoaded = false;
+    this.score =
+      String(
+        score ||
+        "1"
+      ).trim();
+
+    this.account =
+      null;
+
+    this.league =
+      null;
+
+    this.leagueId =
+      null;
+
+    this.userId =
+      null;
+
+    this.lastDashboard =
+      null;
+
+    this.persistedDashboard =
+      null;
+
+    this.persistedDashboardLoaded =
+      false;
+
+    this.rivalsLoadedAt =
+      0;
+
+    this.guard =
+      new ApiGuard();
+
+    this.usage =
+      new ApiUsageTracker();
+
+    this.scheduler =
+      new RequestScheduler({
+        minGapMs:
+          REQUEST_GAP_MS,
+
+        guard:
+          this.guard,
+      });
+
+    this.cache =
+      new SmartCache({
+        onAvoided:
+          (event) =>
+            this.usage.recordAvoided(
+              event
+            ),
+      });
+
+    this.infrastructurePromise =
+      Promise.all([
+        this.guard.init(),
+        this.usage.init(),
+      ]);
+  }
+
+  async asegurarInfraestructura() {
+    await this.infrastructurePromise;
   }
 
   async inicializar() {
-    if (this.account && this.leagueId && this.userId) {
+    await this.asegurarInfraestructura();
+
+    if (
+      this.account &&
+      this.leagueId &&
+      this.userId
+    ) {
       return;
     }
 
-    if (this.estaEnCooldown()) {
+    if (
+      this.guard.isBlocked()
+    ) {
       throw this.crearErrorRateLimit();
     }
 
@@ -96,24 +212,30 @@ export class BiwengerClient {
   }
 
   async cargarCuenta() {
-    const response = await fetch(
-      `${API_URL}/account`,
-      {
-        headers: this.crearHeaders(false),
-      }
-    );
-
-    const body = await this.leerJson(response);
-
-    this.comprobarRateLimit(
+    const {
       response,
       body,
-      "/account"
-    );
+    } =
+      await this.fetchBiwenger({
+        url:
+          `${API_URL}/account`,
+
+        endpoint:
+          "account",
+
+        options: {
+          headers:
+            this.crearHeaders(
+              false
+            ),
+        },
+      });
 
     if (
-      response.status === 401 ||
-      response.status === 403
+      response.status ===
+        401 ||
+      response.status ===
+        403
     ) {
       throw new Error(
         "El token de Biwenger no es válido o ha caducado."
@@ -123,74 +245,255 @@ export class BiwengerClient {
     if (!response.ok) {
       throw new Error(
         body?.message ||
-          `Error consultando la cuenta (${response.status})`
+        `Error consultando la cuenta (${response.status})`
       );
     }
 
-    const leagues = body?.data?.leagues || [];
+    const leagues =
+      body?.data?.leagues ||
+      [];
 
-    if (!leagues.length) {
-      throw new Error("No se encontraron ligas.");
+    if (
+      !leagues.length
+    ) {
+      throw new Error(
+        "No se encontraron ligas."
+      );
     }
 
-    let selectedLeague = leagues[0];
+    let selectedLeague =
+      leagues[0];
 
     if (this.leagueName) {
-      const found = leagues.find(
-        (league) =>
-          String(league?.name || "")
-            .trim()
-            .toLowerCase() ===
-          this.leagueName.toLowerCase()
+      const found =
+        leagues.find(
+          (league) =>
+            String(
+              league?.name ||
+              ""
+            )
+              .trim()
+              .toLowerCase() ===
+            this.leagueName
+              .toLowerCase()
+        );
+
+      if (found) {
+        selectedLeague =
+          found;
+      }
+    }
+
+    this.account =
+      body.data;
+
+    this.league =
+      selectedLeague;
+
+    this.leagueId =
+      Number(
+        selectedLeague.id
       );
 
-      if (found) selectedLeague = found;
+    this.userId =
+      Number(
+        selectedLeague
+          ?.user
+          ?.id
+      );
+
+    if (
+      selectedLeague
+        ?.scoreID
+    ) {
+      this.score =
+        String(
+          selectedLeague
+            .scoreID
+        );
     }
 
-    this.account = body.data;
-    this.league = selectedLeague;
-    this.leagueId = Number(selectedLeague.id);
-    this.userId = Number(selectedLeague?.user?.id);
-
-    if (selectedLeague?.scoreID) {
-      this.score = String(selectedLeague.scoreID);
+    if (
+      !this.version &&
+      body?.data?.version
+    ) {
+      this.version =
+        String(
+          body.data.version
+        );
     }
 
-    if (!this.version && body?.data?.version) {
-      this.version = String(body.data.version);
-    }
+    console.log(
+      `[Biwenger] Liga: ${selectedLeague.name}`
+    );
 
-    console.log(`[Biwenger] Liga: ${selectedLeague.name}`);
-    console.log(`[Biwenger] League ID: ${this.leagueId}`);
-    console.log(`[Biwenger] User ID: ${this.userId}`);
-    console.log(`[Biwenger] Score: ${this.score}`);
+    console.log(
+      `[Biwenger] League ID: ${this.leagueId}`
+    );
+
+    console.log(
+      `[Biwenger] User ID: ${this.userId}`
+    );
+
+    console.log(
+      `[Biwenger] Protección: ${REQUEST_GAP_MS / 1000}s entre peticiones`
+    );
   }
 
-  async request(path, { userId = this.userId } = {}) {
-    await this.inicializar();
+  async fetchBiwenger({
+    url,
+    endpoint,
+    options = {},
+    kind = "read",
+  }) {
+    await this.asegurarInfraestructura();
 
-    if (this.estaEnCooldown()) {
+    if (
+      this.guard.isBlocked()
+    ) {
       throw this.crearErrorRateLimit();
     }
 
-    const response = await fetch(
-      `${API_URL}${path}`,
+    return this.scheduler.schedule(
+      endpoint,
+      async () => {
+        const startedAt =
+          Date.now();
+
+        let response =
+          null;
+
+        try {
+          response =
+            await fetch(
+              url,
+              options
+            );
+
+          const body =
+            await this.leerJson(
+              response
+            );
+
+          const durationMs =
+            Date.now() -
+            startedAt;
+
+          this.usage.recordRequest({
+            endpoint,
+            kind,
+            status:
+              response.status,
+            ok:
+              response.ok,
+            durationMs,
+          });
+
+          if (
+            esRateLimitResponse(
+              response,
+              body
+            )
+          ) {
+            const retryAfterMs =
+              parseRetryAfter(
+                response
+                  ?.headers
+                  ?.get(
+                    "retry-after"
+                  )
+              );
+
+            await this.guard.trigger({
+              retryAfterMs,
+
+              reason:
+                body?.message ||
+                body?.error ||
+                `Rate limit en ${endpoint}`,
+            });
+
+            const error =
+              this.crearErrorRateLimit();
+
+            this.scheduler.cancelPending(
+              error
+            );
+
+            throw error;
+          }
+
+          return {
+            response,
+            body,
+          };
+        } catch (error) {
+          if (
+            error?.code ===
+            "BIWENGER_RATE_LIMIT"
+          ) {
+            throw error;
+          }
+
+          if (!response) {
+            this.usage.recordRequest({
+              endpoint,
+              kind,
+              status:
+                0,
+              ok:
+                false,
+              durationMs:
+                Date.now() -
+                startedAt,
+            });
+          }
+
+          throw error;
+        }
+      },
       {
-        headers: this.crearHeaders(true, userId),
+        kind,
       }
     );
+  }
 
-    const body = await this.leerJson(response);
+  async request(
+    path,
+    {
+      userId =
+        this.userId,
+    } = {}
+  ) {
+    await this.inicializar();
 
-    this.comprobarRateLimit(
+    const {
       response,
       body,
-      path
-    );
+    } =
+      await this.fetchBiwenger({
+        url:
+          `${API_URL}${path}`,
+
+        endpoint:
+          endpointName(
+            path
+          ),
+
+        options: {
+          headers:
+            this.crearHeaders(
+              true,
+              userId
+            ),
+        },
+      });
 
     if (
-      response.status === 401 ||
-      response.status === 403
+      response.status ===
+        401 ||
+      response.status ===
+        403
     ) {
       throw new Error(
         "La sesión de Biwenger ha caducado."
@@ -200,148 +503,243 @@ export class BiwengerClient {
     if (!response.ok) {
       throw new Error(
         body?.message ||
-          `Error ${response.status} en ${path}`
+        `Error ${response.status} en ${path}`
       );
     }
 
     return body;
   }
 
-  async obtenerCatalogo({ force = false } = {}) {
+  async obtenerCatalogo({
+    force = false,
+  } = {}) {
     return this.cache.get(
       "catalog",
       {
-        ttlMs: TTL.catalog,
-        minReloadMs: MIN_RELOAD.catalog,
+        ttlMs:
+          TTL.catalog,
+
+        minReloadMs:
+          MIN_RELOAD.catalog,
+
         force,
-        blocked: this.estaEnCooldown(),
-        blockedError: this.crearErrorRateLimit(),
 
-        loader: async () => {
-          const query =
-            `?lang=es&score=${encodeURIComponent(this.score)}`;
+        blocked:
+          this.guard.isBlocked(),
 
-          /*
-           * El catálogo no necesita sesión.
-           * Preferimos el host CF para quitar carga del API principal.
-           */
-          const urls = [
-            `${CF_API_URL}/competitions/la-liga/data${query}`,
-            `${API_URL}/competitions/la-liga/data${query}`,
-          ];
+        blockedError:
+          this.crearErrorRateLimit(),
 
-          let lastError = null;
+        loader:
+          async () => {
+            const query =
+              `?lang=es&score=${encodeURIComponent(
+                this.score
+              )}`;
 
-          for (const url of urls) {
-            try {
-              const response = await fetch(
-                url,
-                {
-                  headers: {
-                    Accept: "application/json, text/plain, */*",
-                    "Accept-Language": "es-ES,es;q=0.9",
-                  },
+            /*
+             * Primero el host CF. Si falla, el principal.
+             * Ambos pasan por la misma cola de 1 petición.
+             */
+            const candidates = [
+              {
+                url:
+                  `${CF_API_URL}/competitions/la-liga/data${query}`,
+
+                endpoint:
+                  "catalog-cf",
+              },
+              {
+                url:
+                  `${API_URL}/competitions/la-liga/data${query}`,
+
+                endpoint:
+                  "catalog-main",
+              },
+            ];
+
+            let lastError =
+              null;
+
+            for (
+              const candidate of
+                candidates
+            ) {
+              try {
+                const {
+                  response,
+                  body,
+                } =
+                  await this.fetchBiwenger({
+                    url:
+                      candidate.url,
+
+                    endpoint:
+                      candidate.endpoint,
+
+                    options: {
+                      headers: {
+                        Accept:
+                          "application/json, text/plain, */*",
+
+                        "Accept-Language":
+                          "es-ES,es;q=0.9",
+                      },
+                    },
+                  });
+
+                if (
+                  response.ok
+                ) {
+                  return body;
                 }
-              );
 
-              const body = await this.leerJson(response);
+                lastError =
+                  new Error(
+                    `No se pudo obtener el catálogo (${response.status})`
+                  );
+              } catch (error) {
+                lastError =
+                  error;
 
-              this.comprobarRateLimit(
-                response,
-                body,
-                "/competitions/la-liga/data"
-              );
-
-              if (response.ok) {
-                return body;
-              }
-
-              lastError = new Error(
-                `No se pudo obtener el catálogo (${response.status})`
-              );
-            } catch (error) {
-              lastError = error;
-
-              if (error?.code === "BIWENGER_RATE_LIMIT") {
-                throw error;
+                if (
+                  error?.code ===
+                  "BIWENGER_RATE_LIMIT"
+                ) {
+                  throw error;
+                }
               }
             }
-          }
 
-          throw (
-            lastError ||
-            new Error("No se pudo obtener el catálogo de LaLiga.")
-          );
-        },
+            throw (
+              lastError ||
+              new Error(
+                "No se pudo obtener el catálogo de LaLiga."
+              )
+            );
+          },
       }
     );
   }
 
-  async obtenerUsuariosLiga({ force = false } = {}) {
+  async obtenerUsuariosLiga({
+    force = false,
+  } = {}) {
     return this.cache.get(
       "league-users",
       {
-        ttlMs: TTL.leagueUsers,
-        minReloadMs: MIN_RELOAD.leagueUsers,
+        ttlMs:
+          TTL.leagueUsers,
+
+        minReloadMs:
+          MIN_RELOAD.leagueUsers,
+
         force,
-        blocked: this.estaEnCooldown(),
-        blockedError: this.crearErrorRateLimit(),
 
-        loader: async () => {
-          const response = await this.request(
-            `/league/${this.leagueId}`
-          );
+        blocked:
+          this.guard.isBlocked(),
 
-          const rawUsers =
-            response?.data?.users ||
-            response?.data?.league?.users ||
-            [];
+        blockedError:
+          this.crearErrorRateLimit(),
 
-          return Array.isArray(rawUsers)
-            ? rawUsers
-            : Object.values(rawUsers || {});
-        },
+        loader:
+          async () => {
+            const response =
+              await this.request(
+                `/league/${this.leagueId}`
+              );
+
+            const rawUsers =
+              response
+                ?.data
+                ?.users ||
+              response
+                ?.data
+                ?.league
+                ?.users ||
+              [];
+
+            return Array.isArray(
+              rawUsers
+            )
+              ? rawUsers
+              : Object.values(
+                  rawUsers ||
+                  {}
+                );
+          },
       }
     );
   }
 
-  async obtenerUsuarioPropio({ force = false } = {}) {
+  async obtenerUsuarioPropio({
+    force = false,
+  } = {}) {
     return this.cache.get(
       "own-user",
       {
-        ttlMs: TTL.ownUser,
-        minReloadMs: MIN_RELOAD.ownUser,
-        force,
-        blocked: this.estaEnCooldown(),
-        blockedError: this.crearErrorRateLimit(),
+        ttlMs:
+          TTL.ownUser,
 
-        loader: () =>
-          this.request("/user?fields=players(id,owner)"),
+        minReloadMs:
+          MIN_RELOAD.ownUser,
+
+        force,
+
+        blocked:
+          this.guard.isBlocked(),
+
+        blockedError:
+          this.crearErrorRateLimit(),
+
+        loader:
+          () =>
+            this.request(
+              "/user?fields=players(id,owner)"
+            ),
       }
     );
   }
 
-  async obtenerMercado({ force = false } = {}) {
+  async obtenerMercado({
+    force = false,
+  } = {}) {
     return this.cache.get(
       "market",
       {
-        ttlMs: TTL.market,
-        minReloadMs: MIN_RELOAD.market,
-        force,
-        blocked: this.estaEnCooldown(),
-        blockedError: this.crearErrorRateLimit(),
+        ttlMs:
+          TTL.market,
 
-        loader: () =>
-          this.request("/market"),
+        minReloadMs:
+          MIN_RELOAD.market,
+
+        force,
+
+        blocked:
+          this.guard.isBlocked(),
+
+        blockedError:
+          this.crearErrorRateLimit(),
+
+        loader:
+          () =>
+            this.request(
+              "/market"
+            ),
       }
     );
   }
 
   async obtenerPlantillaUsuario(
     userId,
-    { force = false } = {}
+    {
+      force = false,
+    } = {}
   ) {
-    const id = Number(userId);
+    const id =
+      Number(
+        userId
+      );
 
     if (!id) {
       return [];
@@ -350,89 +748,159 @@ export class BiwengerClient {
     return this.cache.get(
       `rival-squad:${id}`,
       {
-        ttlMs: TTL.rivalSquad,
-        minReloadMs: MIN_RELOAD.rivalSquad,
+        ttlMs:
+          TTL.rivalSquad,
+
+        minReloadMs:
+          MIN_RELOAD.rivalSquad,
+
         force,
-        blocked: this.estaEnCooldown(),
-        blockedError: this.crearErrorRateLimit(),
 
-        loader: async () => {
-          try {
-            const response = await this.request(
-              "/user?fields=players(id,owner)",
-              {
-                userId: id,
+        blocked:
+          this.guard.isBlocked(),
+
+        blockedError:
+          this.crearErrorRateLimit(),
+
+        loader:
+          async () => {
+            try {
+              const response =
+                await this.request(
+                  "/user?fields=players(id,owner)",
+                  {
+                    userId:
+                      id,
+                  }
+                );
+
+              return (
+                response
+                  ?.data
+                  ?.players ||
+                []
+              );
+            } catch (error) {
+              if (
+                error
+                  ?.code ===
+                "BIWENGER_RATE_LIMIT"
+              ) {
+                throw error;
               }
-            );
 
-            return response?.data?.players || [];
-          } catch (error) {
-            if (error?.code === "BIWENGER_RATE_LIMIT") {
-              throw error;
+              console.warn(
+                `[Biwenger] No se pudo cargar plantilla de usuario ${id}:`,
+                error.message
+              );
+
+              return [];
             }
-
-            console.warn(
-              `[Biwenger] No se pudo cargar plantilla de usuario ${id}:`,
-              error.message
-            );
-
-            return [];
-          }
-        },
+          },
       }
     );
   }
 
-  async obtenerDashboard({ refresh = "smart" } = {}) {
+  async obtenerDashboard({
+    refresh = "smart",
+    includeRivals = false,
+  } = {}) {
+    await this.asegurarInfraestructura();
+
     try {
       await this.inicializar();
 
+      const wantsRivals =
+        Boolean(
+          includeRivals
+        ) ||
+        [
+          "rivals",
+          "all",
+        ].includes(
+          refresh
+        );
+
       const forceMarket =
-        ["market", "core", "action", "all"].includes(refresh);
+        [
+          "market",
+          "core",
+          "action",
+          "all",
+        ].includes(
+          refresh
+        );
 
       const forceOwn =
-        ["core", "action", "all"].includes(refresh);
-
-      const forceUsers =
-        refresh === "all";
-
-      const forceRivals =
-        refresh === "all";
+        [
+          "core",
+          "action",
+          "all",
+        ].includes(
+          refresh
+        );
 
       const forceCatalog =
-        refresh === "all";
+        refresh ===
+        "all";
 
+      /*
+       * Arranque ligero:
+       * - usuario
+       * - mercado
+       * - catálogo
+       *
+       * La cola global los ejecuta de uno en uno.
+       * Rivales NO se cargan aquí.
+       */
       const [
         ownUserResponse,
         marketResponse,
         catalogResponse,
-        leagueUsers,
-      ] = await Promise.all([
-        this.obtenerUsuarioPropio({
-          force: forceOwn,
-        }),
-        this.obtenerMercado({
-          force: forceMarket,
-        }),
-        this.obtenerCatalogo({
-          force: forceCatalog,
-        }),
-        this.obtenerUsuariosLiga({
-          force: forceUsers,
-        }),
-      ]);
+      ] =
+        await Promise.all([
+          this.obtenerUsuarioPropio(
+            {
+              force:
+                forceOwn,
+            }
+          ),
+
+          this.obtenerMercado(
+            {
+              force:
+                forceMarket,
+            }
+          ),
+
+          this.obtenerCatalogo(
+            {
+              force:
+                forceCatalog,
+            }
+          ),
+        ]);
+
+      const persisted =
+        await this.obtenerDashboardPersistido();
 
       const catalogData =
-        catalogResponse?.data || {};
+        catalogResponse?.data ||
+        {};
 
       const catalogPlayers =
-        catalogData?.players || {};
+        catalogData?.players ||
+        {};
 
       const teamsMap =
-        normalizarEquipos(catalogData);
+        normalizarEquipos(
+          catalogData
+        );
 
       const roundsMap =
-        normalizarJornadas(catalogData);
+        normalizarJornadas(
+          catalogData
+        );
 
       const teamStrengths =
         crearFuerzaEquipos(
@@ -446,78 +914,138 @@ export class BiwengerClient {
         teamStrengths,
       };
 
-      const normalizedPlayersById = {};
+      const normalizedPlayersById =
+        {};
 
-      const getPlayer = (
-        playerId,
-        context = "squad"
-      ) => {
-        const id = Number(playerId || 0);
-
-        if (!id) return null;
-
-        if (!normalizedPlayersById[id]) {
-          const raw =
-            catalogPlayers[String(id)] || { id };
-
-          const base =
-            normalizarJugador(
-              raw,
-              normalizeContext
+      const getPlayer =
+        (
+          playerId,
+          context = "squad"
+        ) => {
+          const id =
+            Number(
+              playerId ||
+              0
             );
 
-          normalizedPlayersById[id] = {
-            ...base,
-            analysis: analizarJugador(base, "squad"),
-          };
-        }
+          if (!id) {
+            return null;
+          }
 
-        const base =
-          normalizedPlayersById[id];
+          if (
+            !normalizedPlayersById[
+              id
+            ]
+          ) {
+            const raw =
+              catalogPlayers[
+                String(
+                  id
+                )
+              ] ||
+              {
+                id,
+              };
 
-        if (context === "market") {
-          return {
-            ...base,
-            analysis: analizarJugador(base, "market"),
-          };
-        }
+            const base =
+              normalizarJugador(
+                raw,
+                normalizeContext
+              );
 
-        return base;
-      };
+            normalizedPlayersById[
+              id
+            ] = {
+              ...base,
 
-      /*
-       * MI EQUIPO
-       */
+              analysis:
+                analizarJugador(
+                  base,
+                  "squad"
+                ),
+            };
+          }
+
+          const base =
+            normalizedPlayersById[
+              id
+            ];
+
+          if (
+            context ===
+            "market"
+          ) {
+            return {
+              ...base,
+
+              analysis:
+                analizarJugador(
+                  base,
+                  "market"
+                ),
+            };
+          }
+
+          return base;
+        };
+
       const ownRows =
-        ownUserResponse?.data?.players || [];
+        ownUserResponse
+          ?.data
+          ?.players ||
+        [];
 
-      const squad = ownRows
-        .map((row) =>
-          getPlayer(row?.id, "squad")
-        )
-        .filter(Boolean)
-        .sort(
-          (a, b) =>
-            Number(b.price || 0) -
-            Number(a.price || 0)
-        );
+      const squad =
+        ownRows
+          .map(
+            (row) =>
+              getPlayer(
+                row?.id,
+                "squad"
+              )
+          )
+          .filter(Boolean)
+          .sort(
+            (a, b) =>
+              Number(
+                b.price ||
+                0
+              ) -
+              Number(
+                a.price ||
+                0
+              )
+          );
 
-      /*
-       * FINANZAS
-       */
       const status =
-        marketResponse?.data?.status || {};
+        marketResponse
+          ?.data
+          ?.status ||
+        {};
 
       const balance =
-        Number(status.balance || 0);
+        Number(
+          status.balance ||
+          0
+        );
 
       const maximumBid =
-        Number(status.maximumBid || 0);
+        Number(
+          status.maximumBid ||
+          0
+        );
 
       const teamValue =
         squad.reduce(
-          (total, player) =>
-            total + Number(player.price || 0),
+          (
+            total,
+            player
+          ) =>
+            total +
+            Number(
+              player.price ||
+              0
+            ),
           0
         );
 
@@ -525,206 +1053,416 @@ export class BiwengerClient {
         balance,
         maximumBid,
         teamValue,
-        totalAssets: balance + teamValue,
+        totalAssets:
+          balance +
+          teamValue,
       };
 
       /*
-       * RIVALES
+       * RIVALES BAJO DEMANDA.
        *
-       * Se cargan con concurrencia máxima 2 para evitar
-       * una ráfaga de 7-10 llamadas simultáneas al iniciar.
+       * Si no estamos en la pestaña Rivales, reutilizamos
+       * el último análisis guardado y hacemos CERO llamadas
+       * a /league y a las plantillas rivales.
        */
-      const rivalsToLoad =
-        (leagueUsers || []).filter(
-          (user) =>
-            Number(user?.id || 0) &&
-            Number(user?.id) !== Number(this.userId)
-        );
+      let rivals =
+        this.lastDashboard
+          ?.rivals ||
+        persisted
+          ?.rivals ||
+        [];
 
-      const rivalSquadResults =
-        await mapWithConcurrencySettled(
-          rivalsToLoad,
-          2,
-          async (user) => ({
-            userId: Number(user.id),
-            rows: await this.obtenerPlantillaUsuario(
-              Number(user.id),
-              {
-                force: forceRivals,
-              }
-            ),
-          })
-        );
+      if (wantsRivals) {
+        const leagueUsers =
+          await this.obtenerUsuariosLiga({
+            force:
+              refresh ===
+              "all",
+          });
 
-      const squadsByUser = {};
+        const squadsByUser =
+          {};
 
-      for (const result of rivalSquadResults) {
-        if (result.status !== "fulfilled") {
-          continue;
+        const usersToLoad =
+          (
+            leagueUsers ||
+            []
+          ).filter(
+            (user) =>
+              Number(
+                user?.id ||
+                0
+              ) &&
+              Number(
+                user?.id
+              ) !==
+                Number(
+                  this.userId
+                )
+          );
+
+        /*
+         * No encolamos todos los rivales de golpe.
+         * Los recorremos uno por uno; el scheduler añade
+         * además 4 segundos entre cada petición real.
+         */
+        for (
+          const user of
+            usersToLoad
+        ) {
+          if (
+            this.guard.isBlocked()
+          ) {
+            break;
+          }
+
+          try {
+            const rows =
+              await this.obtenerPlantillaUsuario(
+                Number(
+                  user.id
+                ),
+                {
+                  force:
+                    refresh ===
+                    "all",
+                }
+              );
+
+            squadsByUser[
+              Number(
+                user.id
+              )
+            ] =
+              (
+                rows ||
+                []
+              )
+                .map(
+                  (row) =>
+                    Number(
+                      row?.id ||
+                      0
+                    )
+                )
+                .filter(Boolean);
+
+            for (
+              const playerId of
+                squadsByUser[
+                  Number(
+                    user.id
+                  )
+                ]
+            ) {
+              getPlayer(
+                playerId,
+                "squad"
+              );
+            }
+          } catch (error) {
+            if (
+              error
+                ?.code ===
+              "BIWENGER_RATE_LIMIT"
+            ) {
+              throw error;
+            }
+
+            console.warn(
+              `[Rivales] ${user?.name || user?.id}: ${error?.message}`
+            );
+          }
         }
 
-        const { userId, rows } = result.value;
+        const analyzedRivals =
+          construirRivales({
+            users:
+              leagueUsers,
 
-        squadsByUser[userId] =
-          (rows || [])
-            .map((row) => Number(row?.id || 0))
-            .filter(Boolean);
+            squadsByUser,
 
-        for (const playerId of squadsByUser[userId]) {
-          getPlayer(playerId, "squad");
+            normalizedPlayersById,
+
+            myUserId:
+              this.userId,
+          });
+
+        if (
+          analyzedRivals.length
+        ) {
+          rivals =
+            analyzedRivals;
+
+          this.rivalsLoadedAt =
+            Date.now();
         }
       }
 
-      const rivals =
-        construirRivales({
-          users: leagueUsers,
-          squadsByUser,
-          normalizedPlayersById,
-          myUserId: this.userId,
-        });
-
-      /*
-       * MERCADO
-       */
       const sales =
-        marketResponse?.data?.sales || [];
+        marketResponse
+          ?.data
+          ?.sales ||
+        [];
 
       const rawMarket =
         sales
-          .map((sale) => {
-            const player =
-              getPlayer(
-                sale?.player?.id,
-                "market"
-              );
+          .map(
+            (sale) => {
+              const player =
+                getPlayer(
+                  sale
+                    ?.player
+                    ?.id,
+                  "market"
+                );
 
-            if (!player) return null;
+              if (!player) {
+                return null;
+              }
 
-            const ownerId =
-              Number(sale?.user?.id || 0);
-
-            const sellerType =
-              ownerId > 0
-                ? "user"
-                : "market";
-
-            const sellerName =
-              sellerType === "market"
-                ? "Mercado Biwenger"
-                : sale?.user?.name ||
-                  `Usuario ${ownerId}`;
-
-            return {
-              ...player,
-
-              saleId:
-                Number(sale?.id || 0) || null,
-
-              salePrice:
+              const ownerId =
                 Number(
-                  sale?.price ||
-                  player.price ||
+                  sale
+                    ?.user
+                    ?.id ||
                   0
-                ),
+                );
 
-              ownerId,
-              ownerName: sellerName,
-              sellerType,
+              const sellerType =
+                ownerId > 0
+                  ? "user"
+                  : "market";
 
-              seller: {
-                type: sellerType,
-                id: ownerId || null,
-                name: sellerName,
-              },
+              const sellerName =
+                sellerType ===
+                "market"
+                  ? "Mercado Biwenger"
+                  : sale
+                      ?.user
+                      ?.name ||
+                    `Usuario ${ownerId}`;
 
-              isMine:
-                ownerId === Number(this.userId),
+              return {
+                ...player,
 
-              until:
-                normalizarTimestampSeconds(
-                  sale?.until
-                ),
+                saleId:
+                  Number(
+                    sale?.id ||
+                    0
+                  ) ||
+                  null,
 
-              date:
-                normalizarTimestampSeconds(
-                  sale?.date
-                ),
-            };
-          })
+                salePrice:
+                  Number(
+                    sale
+                      ?.price ||
+                    player.price ||
+                    0
+                  ),
+
+                ownerId,
+
+                ownerName:
+                  sellerName,
+
+                sellerType,
+
+                seller: {
+                  type:
+                    sellerType,
+
+                  id:
+                    ownerId ||
+                    null,
+
+                  name:
+                    sellerName,
+                },
+
+                isMine:
+                  ownerId ===
+                  Number(
+                    this.userId
+                  ),
+
+                until:
+                  normalizarTimestampSeconds(
+                    sale
+                      ?.until
+                  ),
+
+                date:
+                  normalizarTimestampSeconds(
+                    sale
+                      ?.date
+                  ),
+              };
+            }
+          )
           .filter(Boolean);
 
       const marketMeta =
-        crearResumenMercado(rawMarket);
+        crearResumenMercado(
+          rawMarket
+        );
 
       const market =
         enriquecerMercado(
           rawMarket,
           rivals,
           finances
-        ).sort((a, b) => {
-          const aBid =
-            a.marketIntelligence?.shouldBid ? 1 : 0;
+        ).sort(
+          (a, b) => {
+            const aBid =
+              a
+                .marketIntelligence
+                ?.shouldBid
+                ? 1
+                : 0;
 
-          const bBid =
-            b.marketIntelligence?.shouldBid ? 1 : 0;
+            const bBid =
+              b
+                .marketIntelligence
+                ?.shouldBid
+                ? 1
+                : 0;
 
-          if (aBid !== bBid) {
-            return bBid - aBid;
+            if (
+              aBid !==
+              bBid
+            ) {
+              return (
+                bBid -
+                aBid
+              );
+            }
+
+            return (
+              Number(
+                b.analysis
+                  ?.score ||
+                0
+              ) -
+              Number(
+                a.analysis
+                  ?.score ||
+                0
+              )
+            );
           }
-
-          return (
-            Number(b.analysis?.score || 0) -
-            Number(a.analysis?.score || 0)
-          );
-        });
+        );
 
       const bestXI =
         generarMejorXI(
           squad,
-          this.league?.settings || {}
+          this.league
+            ?.settings ||
+            {}
         );
 
+      const guardStatus =
+        this.guard.getStatus();
+
+      const schedulerStatus =
+        this.scheduler.getStatus();
+
+      const apiUsage =
+        this.usage.getStats({
+          scheduler:
+            schedulerStatus,
+
+          guard:
+            guardStatus,
+        });
+
+      const rivalsAge =
+        this.rivalsLoadedAt
+          ? Math.max(
+              0,
+              Math.floor(
+                (
+                  Date.now() -
+                  this.rivalsLoadedAt
+                ) /
+                1000
+              )
+            )
+          : null;
+
       const dashboard = {
-        syncedAt: new Date().toISOString(),
+        syncedAt:
+          new Date()
+            .toISOString(),
 
         league: {
-          id: this.leagueId,
-          name: this.league?.name || "Mi Liga",
-          scoreID: Number(this.score),
+          id:
+            this.leagueId,
+
+          name:
+            this.league
+              ?.name ||
+            "Mi Liga",
+
+          scoreID:
+            Number(
+              this.score
+            ),
 
           settings: {
             balanceHidden:
-              this.league?.settings?.balance === "hidden",
+              this.league
+                ?.settings
+                ?.balance ===
+              "hidden",
 
             lineupCaptain:
-              this.league?.settings?.lineupCaptain !== false,
+              this.league
+                ?.settings
+                ?.lineupCaptain !==
+              false,
 
             lineupStriker:
-              this.league?.settings?.lineupStriker !== false,
+              this.league
+                ?.settings
+                ?.lineupStriker !==
+              false,
 
             lineupAllowExtra:
               Boolean(
-                this.league?.settings?.lineupAllowExtra
+                this.league
+                  ?.settings
+                  ?.lineupAllowExtra
               ),
           },
         },
 
         user: {
-          id: this.userId,
+          id:
+            this.userId,
 
           name:
-            this.league?.user?.name ||
+            this.league
+              ?.user
+              ?.name ||
             "Mi equipo",
 
           points:
             Number(
-              this.league?.user?.points || 0
+              this.league
+                ?.user
+                ?.points ||
+              0
             ),
 
           position:
             Number(
-              this.league?.user?.position || 0
-            ) || null,
+              this.league
+                ?.user
+                ?.position ||
+              0
+            ) ||
+            null,
         },
 
         finances,
@@ -735,46 +1473,113 @@ export class BiwengerClient {
         rivals,
 
         system: {
-          refreshMode: refresh,
+          refreshMode:
+            refresh,
 
           rateLimited:
-            this.estaEnCooldown(),
+            guardStatus.blocked,
 
           rateLimitUntil:
-            this.rateLimitUntil
-              ? new Date(this.rateLimitUntil).toISOString()
-              : null,
+            guardStatus.blockedUntil,
+
+          apiGuard:
+            guardStatus,
+
+          apiUsage,
+
+          scheduler:
+            schedulerStatus,
+
+          rivalsLoaded:
+            Boolean(
+              rivals.length
+            ),
+
+          rivalsLoadedAt:
+            this.rivalsLoadedAt
+              ? new Date(
+                  this.rivalsLoadedAt
+                ).toISOString()
+              : persisted
+                  ?.system
+                  ?.rivalsLoadedAt ||
+                null,
 
           cache:
             this.cache.getMeta(),
 
           cachePolicy: {
             marketSeconds:
-              TTL.market / 1000,
+              TTL.market /
+              1000,
 
             ownUserSeconds:
-              TTL.ownUser / 1000,
+              TTL.ownUser /
+              1000,
 
             rivalsSeconds:
-              TTL.rivalSquad / 1000,
+              TTL.rivalSquad /
+              1000,
 
             leagueUsersSeconds:
-              TTL.leagueUsers / 1000,
+              TTL.leagueUsers /
+              1000,
 
             catalogSeconds:
-              TTL.catalog / 1000,
+              TTL.catalog /
+              1000,
+          },
+
+          nextRefresh: {
+            marketSeconds:
+              this.cache
+                .getRemainingSeconds(
+                  "market",
+                  TTL.market
+                ),
+
+            ownUserSeconds:
+              this.cache
+                .getRemainingSeconds(
+                  "own-user",
+                  TTL.ownUser
+                ),
+
+            catalogSeconds:
+              this.cache
+                .getRemainingSeconds(
+                  "catalog",
+                  TTL.catalog
+                ),
+
+            rivalsSeconds:
+              rivalsAge ===
+              null
+                ? null
+                : Math.max(
+                    0,
+                    Math.ceil(
+                      TTL.rivalSquad /
+                      1000 -
+                      rivalsAge
+                    )
+                  ),
           },
         },
       };
 
-      this.lastDashboard = dashboard;
-      this.persistedDashboard = dashboard;
-      this.persistedDashboardLoaded = true;
+      this.lastDashboard =
+        dashboard;
 
-      /*
-       * No esperamos la escritura del archivo para responder.
-       */
-      void saveDashboardSnapshot(dashboard);
+      this.persistedDashboard =
+        dashboard;
+
+      this.persistedDashboardLoaded =
+        true;
+
+      void saveDashboardSnapshot(
+        dashboard
+      );
 
       return dashboard;
     } catch (error) {
@@ -784,25 +1589,42 @@ export class BiwengerClient {
 
       if (
         fallback &&
-        error?.code === "BIWENGER_RATE_LIMIT"
+        error?.code ===
+        "BIWENGER_RATE_LIMIT"
       ) {
+        const guardStatus =
+          this.guard.getStatus();
+
         return {
           ...fallback,
 
           system: {
-            ...fallback?.system,
+            ...fallback
+              ?.system,
 
-            rateLimited: true,
+            rateLimited:
+              true,
 
             rateLimitUntil:
-              this.rateLimitUntil
-                ? new Date(this.rateLimitUntil).toISOString()
-                : null,
+              guardStatus.blockedUntil,
 
-            servingStale: true,
+            apiGuard:
+              guardStatus,
+
+            apiUsage:
+              this.usage.getStats({
+                scheduler:
+                  this.scheduler.getStatus(),
+
+                guard:
+                  guardStatus,
+              }),
+
+            servingStale:
+              true,
 
             message:
-              "Biwenger limitó temporalmente las peticiones. Se muestran los últimos datos guardados y no se seguirá insistiendo contra la API.",
+              "Protección activa: se muestran los últimos datos guardados y no se harán más peticiones a Biwenger durante el cooldown.",
           },
         };
       }
@@ -812,14 +1634,42 @@ export class BiwengerClient {
   }
 
   async obtenerDashboardPersistido() {
-    if (this.persistedDashboardLoaded) {
-      return this.persistedDashboard || null;
+    if (
+      this.persistedDashboardLoaded
+    ) {
+      return (
+        this.persistedDashboard ||
+        null
+      );
     }
 
-    this.persistedDashboardLoaded = true;
+    this.persistedDashboardLoaded =
+      true;
 
     this.persistedDashboard =
       await loadDashboardSnapshot();
+
+    if (
+      this.persistedDashboard
+        ?.system
+        ?.rivalsLoadedAt
+    ) {
+      const parsed =
+        Date.parse(
+          this.persistedDashboard
+            .system
+            .rivalsLoadedAt
+        );
+
+      if (
+        Number.isFinite(
+          parsed
+        )
+      ) {
+        this.rivalsLoadedAt =
+          parsed;
+      }
+    }
 
     return this.persistedDashboard;
   }
@@ -838,23 +1688,36 @@ export class BiwengerClient {
     }
 
     if (market) {
-      this.cache.invalidate("market");
+      this.cache.invalidate(
+        "market"
+      );
     }
 
     if (ownUser) {
-      this.cache.invalidate("own-user");
+      this.cache.invalidate(
+        "own-user"
+      );
     }
 
     if (leagueUsers) {
-      this.cache.invalidate("league-users");
+      this.cache.invalidate(
+        "league-users"
+      );
     }
 
     if (catalog) {
-      this.cache.invalidate("catalog");
+      this.cache.invalidate(
+        "catalog"
+      );
     }
 
     if (rivals) {
-      this.cache.invalidatePrefix("rival-squad:");
+      this.cache.invalidatePrefix(
+        "rival-squad:"
+      );
+
+      this.rivalsLoadedAt =
+        0;
     }
   }
 
@@ -863,44 +1726,61 @@ export class BiwengerClient {
     {
       method = "POST",
       body,
-      userId = this.userId,
+      userId =
+        this.userId,
     } = {}
   ) {
     await this.inicializar();
 
-    if (this.estaEnCooldown()) {
+    if (
+      this.guard.isBlocked()
+    ) {
       throw this.crearErrorRateLimit(
-        "Biwenger tiene activo un límite temporal de peticiones. Por seguridad no enviaremos operaciones reales hasta que termine."
+        "La protección de Biwenger está activa. Por seguridad no enviaremos operaciones reales durante el cooldown."
       );
     }
 
-    /*
-     * Escrituras sin retry automático.
-     */
-    const response = await fetch(
-      `${API_URL}${path}`,
-      {
-        method,
-        headers: this.crearHeaders(true, userId),
-        body:
-          body === undefined
-            ? undefined
-            : JSON.stringify(body),
-      }
-    );
-
-    const result =
-      await this.leerJson(response);
-
-    this.comprobarRateLimit(
+    const {
       response,
-      result,
-      path
-    );
+      body:
+        result,
+    } =
+      await this.fetchBiwenger({
+        url:
+          `${API_URL}${path}`,
+
+        endpoint:
+          `write:${endpointName(
+            path
+          )}`,
+
+        kind:
+          "write",
+
+        options: {
+          method,
+
+          headers:
+            this.crearHeaders(
+              true,
+              userId
+            ),
+
+          body:
+            body ===
+            undefined
+              ? undefined
+              : JSON.stringify(
+                  body
+                ),
+        },
+      });
 
     if (
-      response.status === 401 ||
-      response.status === 403
+      response.status ===
+        401 ||
+      response.status ===
+        403
     ) {
       throw new Error(
         "La sesión de Biwenger ha caducado."
@@ -915,7 +1795,12 @@ export class BiwengerClient {
       );
     }
 
-    if (Number(result?.status || 200) >= 400) {
+    if (
+      Number(
+        result?.status ||
+        200
+      ) >= 400
+    ) {
       throw new Error(
         result?.message ||
         "Biwenger rechazó la operación."
@@ -931,39 +1816,73 @@ export class BiwengerClient {
   }) {
     await this.inicializar();
 
-    if (this.estaEnCooldown()) {
+    if (
+      this.guard.isBlocked()
+    ) {
       throw this.crearErrorRateLimit(
-        "No se puede pujar mientras Biwenger mantiene el límite temporal."
+        "No se puede pujar mientras la protección por límite de peticiones está activa."
       );
     }
 
-    const id = Number(playerId);
-    const bid =
-      Math.round(Number(amount));
+    const id =
+      Number(
+        playerId
+      );
 
-    if (!Number.isInteger(id) || id <= 0) {
-      throw new Error("Jugador inválido.");
+    const bid =
+      Math.round(
+        Number(
+          amount
+        )
+      );
+
+    if (
+      !Number.isInteger(
+        id
+      ) ||
+      id <= 0
+    ) {
+      throw new Error(
+        "Jugador inválido."
+      );
     }
 
-    if (!Number.isFinite(bid) || bid <= 0) {
+    if (
+      !Number.isFinite(
+        bid
+      ) ||
+      bid <= 0
+    ) {
       throw new Error(
         "La puja debe ser mayor a 0 €."
       );
     }
 
     /*
-     * Verificación puntual justo al confirmar.
+     * Solo al confirmar una puja hacemos esta verificación real.
      */
     const marketResponse =
-      await this.request("/market");
+      await this.request(
+        "/market"
+      );
 
     const sales =
-      marketResponse?.data?.sales || [];
+      marketResponse
+        ?.data
+        ?.sales ||
+      [];
 
-    const sale = sales.find(
-      (item) =>
-        Number(item?.player?.id || 0) === id
-    );
+    const sale =
+      sales.find(
+        (item) =>
+          Number(
+            item
+              ?.player
+              ?.id ||
+            0
+          ) ===
+          id
+      );
 
     if (!sale) {
       throw new Error(
@@ -972,9 +1891,19 @@ export class BiwengerClient {
     }
 
     const sellerId =
-      Number(sale?.user?.id || 0);
+      Number(
+        sale
+          ?.user
+          ?.id ||
+        0
+      );
 
-    if (sellerId === Number(this.userId)) {
+    if (
+      sellerId ===
+      Number(
+        this.userId
+      )
+    ) {
       throw new Error(
         "No puedes pujar por un jugador ofrecido por ti."
       );
@@ -982,56 +1911,81 @@ export class BiwengerClient {
 
     const maximumBid =
       Number(
-        marketResponse?.data?.status?.maximumBid || 0
+        marketResponse
+          ?.data
+          ?.status
+          ?.maximumBid ||
+        0
       );
 
     if (
       maximumBid > 0 &&
-      bid > maximumBid
+      bid >
+      maximumBid
     ) {
       throw new Error(
         `La puja supera tu límite actual de ${maximumBid.toLocaleString("es-ES")} €.`
       );
     }
 
-    const body = {
-      to:
-        sellerId > 0
-          ? sellerId
-          : null,
-
-      type: "purchase",
-      amount: bid,
-      requestedPlayers: [id],
-    };
-
     const result =
       await this.writeRequest(
         "/offers",
         {
-          method: "POST",
-          body,
+          method:
+            "POST",
+
+          body: {
+            to:
+              sellerId > 0
+                ? sellerId
+                : null,
+
+            type:
+              "purchase",
+
+            amount:
+              bid,
+
+            requestedPlayers: [
+              id,
+            ],
+          },
         }
       );
 
     /*
-     * Solo estos módulos pueden haber cambiado.
+     * Tras la escritura NO tocamos rivales ni catálogo.
      */
     this.invalidarCache({
-      market: true,
-      ownUser: true,
+      market:
+        true,
+
+      ownUser:
+        true,
     });
 
     return {
-      operation: "bid",
-      playerId: id,
-      amount: bid,
-      sellerId: sellerId || null,
+      operation:
+        "bid",
+
+      playerId:
+        id,
+
+      amount:
+        bid,
+
+      sellerId:
+        sellerId ||
+        null,
+
       sellerType:
         sellerId > 0
           ? "user"
           : "market",
-      biwenger: result,
+
+      biwenger:
+        result,
     };
   }
 
@@ -1042,23 +1996,41 @@ export class BiwengerClient {
   }) {
     await this.inicializar();
 
-    if (this.estaEnCooldown()) {
+    if (
+      this.guard.isBlocked()
+    ) {
       throw this.crearErrorRateLimit(
-        "No se puede publicar una venta mientras Biwenger mantiene el límite temporal."
+        "No se puede publicar una venta mientras la protección por límite de peticiones está activa."
       );
     }
 
-    const id = Number(playerId);
+    const id =
+      Number(
+        playerId
+      );
 
     const salePrice =
-      Math.round(Number(price));
+      Math.round(
+        Number(
+          price
+        )
+      );
 
-    if (!Number.isInteger(id) || id <= 0) {
-      throw new Error("Jugador inválido.");
+    if (
+      !Number.isInteger(
+        id
+      ) ||
+      id <= 0
+    ) {
+      throw new Error(
+        "Jugador inválido."
+      );
     }
 
     if (
-      !Number.isFinite(salePrice) ||
+      !Number.isFinite(
+        salePrice
+      ) ||
       salePrice <= 0
     ) {
       throw new Error(
@@ -1067,7 +2039,7 @@ export class BiwengerClient {
     }
 
     /*
-     * Verificación puntual justo al confirmar.
+     * Solo al confirmar la venta verificamos propiedad.
      */
     const userResponse =
       await this.request(
@@ -1075,12 +2047,19 @@ export class BiwengerClient {
       );
 
     const ownPlayers =
-      userResponse?.data?.players || [];
+      userResponse
+        ?.data
+        ?.players ||
+      [];
 
     const isMine =
       ownPlayers.some(
         (item) =>
-          Number(item?.id || 0) === id
+          Number(
+            item?.id ||
+            0
+          ) ===
+          id
       );
 
     if (!isMine) {
@@ -1089,150 +2068,212 @@ export class BiwengerClient {
       );
     }
 
-    const body = {
-      type: "sell",
-      player: id,
-      price: salePrice,
-      rejectOffers:
-        Boolean(rejectOffers),
-    };
-
     const result =
       await this.writeRequest(
         "/market",
         {
-          method: "POST",
-          body,
+          method:
+            "POST",
+
+          body: {
+            type:
+              "sell",
+
+            player:
+              id,
+
+            price:
+              salePrice,
+
+            rejectOffers:
+              Boolean(
+                rejectOffers
+              ),
+          },
         }
       );
 
     this.invalidarCache({
-      market: true,
-      ownUser: true,
+      market:
+        true,
+
+      ownUser:
+        true,
     });
 
     return {
-      operation: "sell",
-      playerId: id,
-      price: salePrice,
+      operation:
+        "sell",
+
+      playerId:
+        id,
+
+      price:
+        salePrice,
+
       rejectOffers:
-        Boolean(rejectOffers),
-      biwenger: result,
+        Boolean(
+          rejectOffers
+        ),
+
+      biwenger:
+        result,
     };
   }
 
-  estaEnCooldown() {
-    return (
-      Number(this.rateLimitUntil || 0) >
-      Date.now()
-    );
-  }
+  async getSystemStatus() {
+    await this.asegurarInfraestructura();
 
-  comprobarRateLimit(
-    response,
-    body,
-    path
-  ) {
-    if (
-      !esRateLimitResponse(
-        response,
-        body
-      )
-    ) {
-      return;
-    }
+    const persisted =
+      await this.obtenerDashboardPersistido();
 
-    const retryAfter =
-      parseRetryAfter(
-        response?.headers?.get("retry-after")
-      );
+    const guardStatus =
+      this.guard.getStatus();
 
-    const cooldown =
-      retryAfter ||
-      DEFAULT_RATE_LIMIT_COOLDOWN;
+    return {
+      leagueId:
+        this.leagueId ||
+        persisted
+          ?.league
+          ?.id ||
+        null,
 
-    this.rateLimitUntil =
-      Math.max(
-        this.rateLimitUntil,
-        Date.now() + cooldown
-      );
+      userId:
+        this.userId ||
+        persisted
+          ?.user
+          ?.id ||
+        null,
 
-    console.warn(
-      `[Biwenger] Rate limit en ${path}. Cooldown hasta ${new Date(
-        this.rateLimitUntil
-      ).toLocaleString()}.`
-    );
+      leagueName:
+        this.league
+          ?.name ||
+        persisted
+          ?.league
+          ?.name ||
+        null,
 
-    throw this.crearErrorRateLimit();
+      score:
+        this.score,
+
+      guard:
+        guardStatus,
+
+      scheduler:
+        this.scheduler.getStatus(),
+
+      apiUsage:
+        this.usage.getStats({
+          scheduler:
+            this.scheduler.getStatus(),
+
+          guard:
+            guardStatus,
+        }),
+    };
   }
 
   crearErrorRateLimit(
     customMessage = ""
   ) {
-    const remaining =
-      Math.max(
-        0,
-        this.rateLimitUntil - Date.now()
-      );
+    const status =
+      this.guard.getStatus();
 
     const minutes =
       Math.max(
         1,
-        Math.ceil(remaining / 60_000)
+        Math.ceil(
+          Number(
+            status.remainingSeconds ||
+            0
+          ) /
+          60
+        )
       );
 
-    const error = new Error(
-      customMessage ||
-      `Biwenger limitó temporalmente las peticiones. El sistema no volverá a consultar la API durante aproximadamente ${minutes} min y usará datos en caché.`
-    );
+    const error =
+      new Error(
+        customMessage ||
+        `Protección de Biwenger activa. No se harán peticiones durante aproximadamente ${minutes} min; se usarán datos guardados.`
+      );
 
     error.code =
       "BIWENGER_RATE_LIMIT";
 
     error.retryAt =
-      this.rateLimitUntil || null;
+      status.blockedUntil ||
+      null;
 
     return error;
   }
 
   crearHeaders(
     includeLeague = false,
-    userId = this.userId
+    userId =
+      this.userId
   ) {
     const headers = {
-      Accept: "application/json, text/plain, */*",
-      "Content-Type": "application/json",
-      "X-Lang": "es",
-      Authorization: `Bearer ${this.token}`,
+      Accept:
+        "application/json, text/plain, */*",
+
+      "Content-Type":
+        "application/json",
+
+      "X-Lang":
+        "es",
+
+      Authorization:
+        `Bearer ${this.token}`,
     };
 
-    if (this.version) {
-      headers["X-Version"] =
+    if (
+      this.version
+    ) {
+      headers[
+        "X-Version"
+      ] =
         this.version;
     }
 
-    if (includeLeague) {
-      headers["X-League"] =
-        String(this.leagueId);
+    if (
+      includeLeague
+    ) {
+      headers[
+        "X-League"
+      ] =
+        String(
+          this.leagueId
+        );
 
-      headers["X-User"] =
-        String(userId);
+      headers[
+        "X-User"
+      ] =
+        String(
+          userId
+        );
     }
 
     return headers;
   }
 
-  async leerJson(response) {
+  async leerJson(
+    response
+  ) {
     const text =
       await response.text();
 
-    if (!text) return {};
+    if (!text) {
+      return {};
+    }
 
     try {
-      return JSON.parse(text);
+      return JSON.parse(
+        text
+      );
     } catch {
       return {
-        message: text,
+        message:
+          text,
       };
     }
   }
@@ -1242,7 +2283,10 @@ function esRateLimitResponse(
   response,
   body
 ) {
-  if (response?.status === 429) {
+  if (
+    response?.status ===
+    429
+  ) {
     return true;
   }
 
@@ -1252,7 +2296,9 @@ function esRateLimitResponse(
       body?.error ||
       ""
     )
-      .normalize("NFD")
+      .normalize(
+        "NFD"
+      )
       .replace(
         /[\u0300-\u036f]/g,
         ""
@@ -1260,174 +2306,252 @@ function esRateLimitResponse(
       .toLowerCase();
 
   return (
-    text.includes("numero maximo de peticiones") ||
-    text.includes("maximo de peticiones") ||
-    text.includes("maximum number of requests") ||
-    text.includes("too many requests") ||
-    text.includes("demasiadas peticiones")
+    text.includes(
+      "numero maximo de peticiones"
+    ) ||
+    text.includes(
+      "maximo de peticiones"
+    ) ||
+    text.includes(
+      "maximum number of requests"
+    ) ||
+    text.includes(
+      "too many requests"
+    ) ||
+    text.includes(
+      "demasiadas peticiones"
+    )
   );
 }
 
-function parseRetryAfter(value) {
-  if (!value) return 0;
-
-  const seconds = Number(value);
-
-  if (
-    Number.isFinite(seconds) &&
-    seconds > 0
-  ) {
-    return seconds * 1000;
+function parseRetryAfter(
+  value
+) {
+  if (!value) {
+    return 0;
   }
 
-  const date = Date.parse(value);
+  const seconds =
+    Number(
+      value
+    );
 
   if (
-    Number.isFinite(date) &&
-    date > Date.now()
+    Number.isFinite(
+      seconds
+    ) &&
+    seconds > 0
   ) {
-    return date - Date.now();
+    return (
+      seconds *
+      1000
+    );
+  }
+
+  const date =
+    Date.parse(
+      value
+    );
+
+  if (
+    Number.isFinite(
+      date
+    ) &&
+    date >
+    Date.now()
+  ) {
+    return (
+      date -
+      Date.now()
+    );
   }
 
   return 0;
 }
 
-async function mapWithConcurrencySettled(
-  items,
-  limit,
-  mapper
+function endpointName(
+  path
 ) {
-  const results =
-    new Array(items.length);
+  const normalized =
+    String(
+      path ||
+      ""
+    )
+      .split(
+        "?"
+      )[0]
+      .replace(
+        /^\/+/,
+        ""
+      );
 
-  let nextIndex = 0;
-
-  async function worker() {
-    while (true) {
-      const index = nextIndex;
-      nextIndex += 1;
-
-      if (index >= items.length) {
-        return;
-      }
-
-      try {
-        results[index] = {
-          status: "fulfilled",
-          value:
-            await mapper(
-              items[index],
-              index
-            ),
-        };
-      } catch (reason) {
-        results[index] = {
-          status: "rejected",
-          reason,
-        };
-      }
-    }
+  if (
+    normalized ===
+    "market"
+  ) {
+    return "market";
   }
 
-  const workers =
-    Array.from(
-      {
-        length:
-          Math.min(
-            Math.max(1, limit),
-            items.length || 1
-          ),
-      },
-      () => worker()
-    );
+  if (
+    normalized ===
+    "user"
+  ) {
+    return "user";
+  }
 
-  await Promise.all(workers);
+  if (
+    normalized.startsWith(
+      "league/"
+    )
+  ) {
+    return "league";
+  }
 
-  return results;
+  if (
+    normalized ===
+    "offers"
+  ) {
+    return "offers";
+  }
+
+  return (
+    normalized ||
+    "api"
+  );
 }
 
-function normalizarTimestampSeconds(value) {
+function normalizarTimestampSeconds(
+  value
+) {
   if (
     value === null ||
-    value === undefined ||
+    value ===
+      undefined ||
     value === ""
   ) {
     return null;
   }
 
   if (
-    typeof value === "number" ||
+    typeof value ===
+      "number" ||
     /^\d+(?:\.\d+)?$/.test(
-      String(value).trim()
+      String(
+        value
+      ).trim()
     )
   ) {
-    const numeric = Number(value);
+    const numeric =
+      Number(
+        value
+      );
 
     if (
-      !Number.isFinite(numeric) ||
+      !Number.isFinite(
+        numeric
+      ) ||
       numeric <= 0
     ) {
       return null;
     }
 
-    if (numeric > 10_000_000_000) {
-      return Math.floor(numeric / 1000);
+    if (
+      numeric >
+      10_000_000_000
+    ) {
+      return Math.floor(
+        numeric /
+        1000
+      );
     }
 
-    return Math.floor(numeric);
+    return Math.floor(
+      numeric
+    );
   }
 
   const parsed =
-    Date.parse(String(value));
+    Date.parse(
+      String(
+        value
+      )
+    );
 
-  return Number.isFinite(parsed)
-    ? Math.floor(parsed / 1000)
+  return Number.isFinite(
+    parsed
+  )
+    ? Math.floor(
+        parsed /
+        1000
+      )
     : null;
 }
 
-function crearResumenMercado(marketPlayers) {
+function crearResumenMercado(
+  marketPlayers
+) {
   const now =
-    Math.floor(Date.now() / 1000);
+    Math.floor(
+      Date.now() /
+      1000
+    );
 
   const visible =
-    (marketPlayers || []).filter(
-      (player) => !player.isMine
+    (
+      marketPlayers ||
+      []
+    ).filter(
+      (player) =>
+        !player.isMine
     );
 
   const systemListings =
     visible.filter(
       (player) =>
-        player.sellerType === "market"
+        player.sellerType ===
+        "market"
     );
 
   const managerListings =
     visible.filter(
       (player) =>
-        player.sellerType === "user"
+        player.sellerType ===
+        "user"
     );
 
   const futureSystemExpirations =
     systemListings
-      .map((player) =>
-        Number(player.until || 0)
+      .map(
+        (player) =>
+          Number(
+            player.until ||
+            0
+          )
       )
       .filter(
         (timestamp) =>
-          timestamp > now
+          timestamp >
+          now
       );
 
   const futureAllExpirations =
     visible
-      .map((player) =>
-        Number(player.until || 0)
+      .map(
+        (player) =>
+          Number(
+            player.until ||
+            0
+          )
       )
       .filter(
         (timestamp) =>
-          timestamp > now
+          timestamp >
+          now
       );
 
   const expirations =
-    futureSystemExpirations.length
+    futureSystemExpirations
+      .length
       ? futureSystemExpirations
       : futureAllExpirations;
 
@@ -1443,21 +2567,32 @@ function crearResumenMercado(marketPlayers) {
 
     nextMarketChangeAt:
       expirations.length
-        ? Math.min(...expirations)
+        ? Math.min(
+            ...expirations
+          )
         : null,
 
     nextMarketChangeSource:
-      futureSystemExpirations.length
+      futureSystemExpirations
+        .length
         ? "system-listing-expiry"
-        : futureAllExpirations.length
+        : futureAllExpirations
+            .length
           ? "listing-expiry"
           : "unavailable",
   };
 }
 
-function limpiarToken(token) {
-  return String(token)
+function limpiarToken(
+  token
+) {
+  return String(
+    token
+  )
     .trim()
-    .replace(/^Bearer\s+/i, "")
+    .replace(
+      /^Bearer\s+/i,
+      ""
+    )
     .trim();
 }

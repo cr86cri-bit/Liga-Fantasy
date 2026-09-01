@@ -18,11 +18,128 @@ const MARKET_SNAPSHOT_KEY =
 const DASHBOARD_LOCAL_CACHE_KEY =
   "liga-fantasy-dashboard-cache-v1";
 
+const API_LEADER_KEY =
+  "liga-fantasy-api-leader-v1";
+
+const API_CHANNEL_NAME =
+  "liga-fantasy-api-channel-v1";
+
+const API_LEADER_LEASE_MS =
+  20_000;
+
+const API_LEADER_HEARTBEAT_MS =
+  5_000;
+
+const MANUAL_REFRESH_COOLDOWN_MS =
+  60_000;
+
 const NOTIFICATION_HISTORY_KEY =
   "liga-fantasy-notification-history-v1";
 
 const SOFASCORE_PROFILE_CACHE_KEY =
   "liga-fantasy-sports-sources-v1";
+
+function readLocalDashboardCache() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw =
+      window.localStorage.getItem(
+        DASHBOARD_LOCAL_CACHE_KEY
+      );
+
+    return raw
+      ? JSON.parse(raw)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function createTabId() {
+  return (
+    `${Date.now()}-` +
+    Math.random()
+      .toString(36)
+      .slice(2)
+  );
+}
+
+function readLeaderLease() {
+  try {
+    const raw =
+      window.localStorage.getItem(
+        API_LEADER_KEY
+      );
+
+    return raw
+      ? JSON.parse(raw)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLeaderLease(id) {
+  const lease = {
+    id,
+
+    expiresAt:
+      Date.now() +
+      API_LEADER_LEASE_MS,
+  };
+
+  try {
+    window.localStorage.setItem(
+      API_LEADER_KEY,
+      JSON.stringify(lease)
+    );
+  } catch {
+    // localStorage opcional.
+  }
+
+  return lease;
+}
+
+function formatShortDuration(seconds) {
+  if (
+    seconds === null ||
+    seconds === undefined
+  ) {
+    return "Sin cargar";
+  }
+
+  const value =
+    Math.max(
+      0,
+      Math.round(
+        Number(seconds)
+      )
+    );
+
+  if (value < 60) {
+    return `${value}s`;
+  }
+
+  const minutes =
+    Math.floor(value / 60);
+
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+
+  const hours =
+    Math.floor(minutes / 60);
+
+  const rest =
+    minutes % 60;
+
+  return rest
+    ? `${hours}h ${rest}m`
+    : `${hours}h`;
+}
 
 function formatMoney(value) {
   return money.format(Number(value || 0));
@@ -2616,13 +2733,202 @@ function NotificationHistoryModal({
   );
 }
 
+function ApiProtectionPanel({
+  system,
+  isLeader,
+  now,
+}) {
+  if (!system) {
+    return null;
+  }
+
+  const usage =
+    system.apiUsage ||
+    {};
+
+  const next =
+    system.nextRefresh ||
+    {};
+
+  const level =
+    usage.level ||
+    (
+      system.rateLimited
+        ? "blocked"
+        : "safe"
+    );
+
+  const lastRequestMs =
+    usage.lastRequestAt
+      ? Date.parse(
+          usage.lastRequestAt
+        )
+      : null;
+
+  const lastRequestText =
+    lastRequestMs
+      ? `${formatShortDuration(
+          Math.max(
+            0,
+            Math.floor(
+              (
+                now -
+                lastRequestMs
+              ) /
+              1000
+            )
+          )
+        )} atrás`
+      : "Ninguna todavía";
+
+  const endpointRows =
+    usage.endpointsLastHour ||
+    [];
+
+  return (
+    <section
+      className={`api-protection-panel api-level-${level}`}
+    >
+      <div className="api-protection-head">
+        <div>
+          <span className="section-label">
+            PROTECCIÓN BIWENGER
+          </span>
+
+          <h3>
+            {level === "blocked"
+              ? "Cooldown activo"
+              : level === "high"
+                ? "Uso elevado"
+                : level === "controlled"
+                  ? "Uso controlado"
+                  : "Estado seguro"}
+          </h3>
+
+          <p>
+            {isLeader
+              ? "Esta pestaña es la única que realiza actualizaciones automáticas."
+              : "Otra pestaña controla las actualizaciones. Esta recibe los datos compartidos."}
+          </p>
+        </div>
+
+        <span
+          className={`api-role ${
+            isLeader
+              ? "leader"
+              : "follower"
+          }`}
+        >
+          {isLeader
+            ? "● Pestaña líder"
+            : "○ Pestaña secundaria"}
+        </span>
+      </div>
+
+      <div className="api-protection-metrics">
+        <div>
+          <span>Última hora</span>
+          <strong>{usage.requestsLastHour ?? 0}</strong>
+          <small>peticiones reales</small>
+        </div>
+
+        <div>
+          <span>Hoy</span>
+          <strong>{usage.requestsToday ?? 0}</strong>
+          <small>peticiones reales</small>
+        </div>
+
+        <div>
+          <span>Evitadas</span>
+          <strong>{usage.avoidedLastHour ?? 0}</strong>
+          <small>por caché · última hora</small>
+        </div>
+
+        <div>
+          <span>Cola</span>
+          <strong>{usage.queue?.queued ?? 0}</strong>
+          <small>1 petición cada 4s</small>
+        </div>
+
+        <div>
+          <span>Última petición</span>
+          <strong className="api-small-value">
+            {lastRequestText}
+          </strong>
+          <small>Biwenger</small>
+        </div>
+      </div>
+
+      <div className="api-next-refresh">
+        <div>
+          <span>Mercado</span>
+          <strong>{formatShortDuration(next.marketSeconds)}</strong>
+        </div>
+
+        <div>
+          <span>Mi equipo</span>
+          <strong>{formatShortDuration(next.ownUserSeconds)}</strong>
+        </div>
+
+        <div>
+          <span>Rivales</span>
+          <strong>{formatShortDuration(next.rivalsSeconds)}</strong>
+        </div>
+
+        <div>
+          <span>Catálogo</span>
+          <strong>{formatShortDuration(next.catalogSeconds)}</strong>
+        </div>
+      </div>
+
+      {endpointRows.length > 0 && (
+        <details className="api-endpoint-details">
+          <summary>Ver uso por endpoint</summary>
+
+          <div>
+            {endpointRows.map((item) => (
+              <span key={item.endpoint}>
+                <b>{item.endpoint}</b>
+                {item.count}
+              </span>
+            ))}
+          </div>
+        </details>
+      )}
+    </section>
+  );
+}
+
 export default function App() {
-  const [data, setData] = useState(null);
+  const initialDashboardRef =
+    useRef(
+      readLocalDashboardCache()
+    );
+
+  const [
+    data,
+    setData,
+  ] = useState(
+    () =>
+      initialDashboardRef
+        .current
+        ?.data ||
+      null
+  );
+
   const [tab, setTab] = useState("team");
   const [marketFilter, setMarketFilter] = useState("all");
   const [marketPosition, setMarketPosition] = useState("all");
   const [positionFilterOpen, setPositionFilterOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [
+    loading,
+    setLoading,
+  ] = useState(
+    () =>
+      !initialDashboardRef
+        .current
+        ?.data
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [now, setNow] = useState(Date.now());
@@ -2658,6 +2964,21 @@ export default function App() {
     setRealActionError,
   ] = useState("");
 
+const [
+  isApiLeader,
+  setIsApiLeader,
+] = useState(false);
+
+const [
+  manualRefreshCooldownUntil,
+  setManualRefreshCooldownUntil,
+] = useState(0);
+
+const [
+  rivalsLoading,
+  setRivalsLoading,
+] = useState(false);
+
   const [notificationPermission, setNotificationPermission] = useState(() => {
     if (typeof window === "undefined" || !("Notification" in window)) {
       return "unsupported";
@@ -2667,6 +2988,20 @@ export default function App() {
 
   const marketSnapshotRef = useRef(null);
   const marketDeadlineRefreshRef = useRef(null);
+
+const apiChannelRef =
+  useRef(null);
+
+const apiLeaderRef =
+  useRef(false);
+
+const tabIdRef =
+  useRef(
+    createTabId()
+  );
+
+const loadDataRef =
+  useRef(null);
 
 const removeToast = useCallback((id) => {
   setToasts((current) =>
@@ -2757,6 +3092,7 @@ const loadData = useCallback(
   async ({
     silent = false,
     refresh = "smart",
+    includeRivals = false,
   } = {}) => {
     try {
       if (!silent) {
@@ -2768,6 +3104,11 @@ const loadData = useCallback(
       const params =
         new URLSearchParams({
           refresh,
+
+          includeRivals:
+            includeRivals
+              ? "1"
+              : "0",
         });
 
       const response =
@@ -2866,12 +3207,31 @@ const loadData = useCallback(
               )}.`
             : "Biwenger limitó temporalmente las peticiones. Se muestran datos guardados."
         );
-      }
-
-      if (marketChanges.length) {
+      }      if (
+        marketChanges.length &&
+        apiLeaderRef.current
+      ) {
         sendMarketNotifications(
           marketChanges
         );
+      }
+
+      if (
+        apiLeaderRef.current &&
+        apiChannelRef.current
+      ) {
+        try {
+          apiChannelRef.current.postMessage({
+            type: "dashboard-data",
+            data: body.data,
+            error:
+              body.data?.system?.rateLimited
+                ? "Protección de API activa"
+                : "",
+          });
+        } catch {
+          // BroadcastChannel opcional.
+        }
       }
     } catch (err) {
       let localFallback = null;
@@ -2915,33 +3275,338 @@ const loadData = useCallback(
     } finally {
       setLoading(false);
       setRefreshing(false);
+
+      if (
+        refresh ===
+        "rivals"
+      ) {
+        setRivalsLoading(false);
+      }
     }
   },
   [sendMarketNotifications]
 );
 
-  useEffect(() => {
-    loadData({
-      refresh: "smart",
-    });
+loadDataRef.current =
+  loadData;
 
-    /*
-     * 3 minutos en frontend.
-     * El backend además tiene TTL por módulo.
-     */
-    const interval =
-      window.setInterval(
-        () =>
-          loadData({
-            silent: true,
-            refresh: "smart",
-          }),
-        180_000
+useEffect(() => {
+  const tabId =
+    tabIdRef.current;
+
+  let channel =
+    null;
+
+  if (
+    typeof BroadcastChannel !==
+    "undefined"
+  ) {
+    channel =
+      new BroadcastChannel(
+        API_CHANNEL_NAME
       );
 
-    return () =>
-      window.clearInterval(interval);
-  }, [loadData]);
+    apiChannelRef.current =
+      channel;
+  }
+
+  const setLeader =
+    (value) => {
+      apiLeaderRef.current =
+        value;
+
+      setIsApiLeader(value);
+    };
+
+  const tryClaim =
+    () => {
+      const lease =
+        readLeaderLease();
+
+      const available =
+        !lease ||
+        !lease.id ||
+        Number(
+          lease.expiresAt ||
+          0
+        ) <=
+          Date.now() ||
+        lease.id ===
+          tabId;
+
+      if (available) {
+        writeLeaderLease(tabId);
+        setLeader(true);
+        return true;
+      }
+
+      setLeader(false);
+      return false;
+    };
+
+  const hydrate =
+    (dashboard) => {
+      if (!dashboard) {
+        return;
+      }
+
+      setData(dashboard);
+      setLoading(false);
+      setNow(Date.now());
+
+      if (
+        dashboard
+          ?.rivals
+          ?.length
+      ) {
+        setRivalsLoading(false);
+      }
+    };
+
+  if (channel) {
+    channel.onmessage =
+      (event) => {
+        const message =
+          event.data ||
+          {};
+
+        if (
+          message.type ===
+            "dashboard-data" &&
+          !apiLeaderRef.current
+        ) {
+          hydrate(
+            message.data
+          );
+
+          if (
+            message.error
+          ) {
+            setError(
+              message.error
+            );
+          }
+        }
+
+        if (
+          message.type ===
+            "refresh-request" &&
+          apiLeaderRef.current
+        ) {
+          void loadDataRef
+            .current?.({
+              silent:
+                message.silent !==
+                false,
+
+              refresh:
+                message.refresh ||
+                "smart",
+
+              includeRivals:
+                Boolean(
+                  message.includeRivals
+                ),
+            });
+        }
+      };
+  }
+
+  const onStorage =
+    (event) => {
+      if (
+        event.key ===
+        API_LEADER_KEY
+      ) {
+        tryClaim();
+      }
+
+      if (
+        event.key ===
+          DASHBOARD_LOCAL_CACHE_KEY &&
+        !apiLeaderRef.current &&
+        event.newValue
+      ) {
+        try {
+          const parsed =
+            JSON.parse(
+              event.newValue
+            );
+
+          hydrate(
+            parsed?.data
+          );
+        } catch {
+          // Caché inválida.
+        }
+      }
+    };
+
+  window.addEventListener(
+    "storage",
+    onStorage
+  );
+
+  tryClaim();
+
+  const heartbeat =
+    window.setInterval(
+      () => {
+        if (
+          apiLeaderRef.current
+        ) {
+          writeLeaderLease(
+            tabId
+          );
+        } else {
+          tryClaim();
+        }
+      },
+      API_LEADER_HEARTBEAT_MS
+    );
+
+  const release =
+    () => {
+      const lease =
+        readLeaderLease();
+
+      if (
+        lease?.id ===
+        tabId
+      ) {
+        try {
+          window.localStorage.removeItem(
+            API_LEADER_KEY
+          );
+        } catch {
+          // Ignorar.
+        }
+      }
+    };
+
+  window.addEventListener(
+    "beforeunload",
+    release
+  );
+
+  return () => {
+    window.clearInterval(
+      heartbeat
+    );
+
+    window.removeEventListener(
+      "storage",
+      onStorage
+    );
+
+    window.removeEventListener(
+      "beforeunload",
+      release
+    );
+
+    channel?.close();
+
+    if (
+      apiChannelRef.current ===
+      channel
+    ) {
+      apiChannelRef.current =
+        null;
+    }
+
+    release();
+  };
+}, []);
+
+const requestRefresh =
+  useCallback(
+    ({
+      silent = true,
+      refresh = "smart",
+      includeRivals = false,
+    } = {}) => {
+      if (
+        apiLeaderRef.current
+      ) {
+        return loadData({
+          silent,
+          refresh,
+          includeRivals,
+        });
+      }
+
+      if (
+        apiChannelRef.current
+      ) {
+        apiChannelRef.current.postMessage({
+          type: "refresh-request",
+          silent,
+          refresh,
+          includeRivals,
+        });
+      }
+
+      return Promise.resolve();
+    },
+    [loadData]
+  );
+
+useEffect(() => {
+  if (!isApiLeader) {
+    return undefined;
+  }
+
+  const refreshIfVisible =
+    () => {
+      if (
+        document.visibilityState !==
+        "visible"
+      ) {
+        return;
+      }
+
+      void loadData({
+        silent: Boolean(data),
+        refresh: "smart",
+      });
+    };
+
+  refreshIfVisible();
+
+  const interval =
+    window.setInterval(
+      refreshIfVisible,
+      5 * 60 * 1000
+    );
+
+  return () =>
+    window.clearInterval(
+      interval
+    );
+}, [
+  isApiLeader,
+  loadData,
+]);
+
+useEffect(() => {
+  if (
+    tab !==
+    "rivals"
+  ) {
+    return;
+  }
+
+  setRivalsLoading(true);
+
+  void requestRefresh({
+    silent: true,
+    refresh: "rivals",
+    includeRivals: true,
+  });
+}, [
+  tab,
+  requestRefresh,
+]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -3113,7 +3778,15 @@ const filteredMarket =
         "El contador llegó a cero. Comprobando el mercado ahora…",
         "market"
       );
-      loadData({
+      if (
+        !apiLeaderRef.current ||
+        document.visibilityState !==
+          "visible"
+      ) {
+        return;
+      }
+
+      void requestRefresh({
         silent: true,
         refresh: "market",
       });
@@ -3124,7 +3797,11 @@ const filteredMarket =
         window.clearTimeout(marketDeadlineRefreshRef.current);
       }
     };
-  }, [nextMarketChangeAt, loadData, pushToast]);
+  }, [
+    nextMarketChangeAt,
+    requestRefresh,
+    pushToast,
+  ]);
 
 
 const openSellAction =
@@ -3409,7 +4086,7 @@ const executeRealAction =
           null
         );
 
-        await loadData({
+        await requestRefresh({
           silent:
             true,
 
@@ -3432,7 +4109,7 @@ const executeRealAction =
       realActionLoading,
       data,
       pushToast,
-      loadData,
+      requestRefresh,
     ]
   );
 
@@ -3462,6 +4139,44 @@ const executeRealAction =
     }
   }, [pushToast]);
 
+const manualRefreshRemaining =
+  Math.max(
+    0,
+    Math.ceil(
+      (
+        manualRefreshCooldownUntil -
+        now
+      ) /
+      1000
+    )
+  );
+
+const handleManualRefresh =
+  useCallback(
+    () => {
+      if (
+        Date.now() <
+        manualRefreshCooldownUntil
+      ) {
+        return;
+      }
+
+      setManualRefreshCooldownUntil(
+        Date.now() +
+        MANUAL_REFRESH_COOLDOWN_MS
+      );
+
+      void requestRefresh({
+        silent: false,
+        refresh: "core",
+      });
+    },
+    [
+      manualRefreshCooldownUntil,
+      requestRefresh,
+    ]
+  );
+
   if (loading) {
     return (
       <main className="center">
@@ -3479,13 +4194,12 @@ const executeRealAction =
         <p className="error-text">{error}</p>
         <button
           className="primary-button"
-          onClick={() =>
-            loadData({
-              refresh: "core",
-            })
-          }
+          onClick={handleManualRefresh}
+          disabled={manualRefreshRemaining > 0}
         >
-          Reintentar
+          {manualRefreshRemaining > 0
+            ? `Reintentar en ${manualRefreshRemaining}s`
+            : "Reintentar"}
         </button>
       </main>
     );
@@ -3507,16 +4221,20 @@ const executeRealAction =
 
         <button
           className="refresh-button"
-          disabled={refreshing}
-          onClick={() =>
-            loadData({
-              refresh: "core",
-            })
+          disabled={
+            refreshing ||
+            manualRefreshRemaining > 0 ||
+            data?.system?.rateLimited
           }
+          onClick={handleManualRefresh}
         >
-          {refreshing
-            ? "Actualizando..."
-            : "Actualizar datos"}
+          {data?.system?.rateLimited
+            ? "Protección activa"
+            : refreshing
+              ? "Actualizando..."
+              : manualRefreshRemaining > 0
+                ? `Actualizar en ${manualRefreshRemaining}s`
+                : "Actualizar datos"}
         </button>
       </header>
 
@@ -3538,7 +4256,7 @@ const executeRealAction =
             </strong>
 
             <span>
-              Mercado 3 min · Tu equipo 5 min · Rivales 15 min · Catálogo 60 min
+              Mercado 5 min · Tu equipo 10 min · Rivales 30 min bajo demanda · Catálogo 6 h
             </span>
           </div>
 
@@ -3558,6 +4276,12 @@ const executeRealAction =
           )}
         </div>
       )}
+
+      <ApiProtectionPanel
+        system={data?.system}
+        isLeader={isApiLeader}
+        now={now}
+      />
 
       <section className="metrics">
         <Metric label="Jugadores" value={data?.squad?.length || 0} description="Plantilla" />
@@ -3600,7 +4324,7 @@ const executeRealAction =
           <SectionHeader
             label="MERCADO INTELIGENTE"
             title="Mercado actual"
-            description="Actualización inteligente: mercado cada 3 min, rivales cada 15 min y catálogo cada 60 min. Los contadores siguen en tiempo real sin consultar Biwenger."
+            description="Protección máxima: mercado cada 5 min, equipo cada 10 min, rivales solo al abrir su pestaña y catálogo cada 6 h. Los contadores funcionan localmente."
           >
             <div className="market-filter-controls">
   <MarketFilters
@@ -3660,7 +4384,27 @@ const executeRealAction =
             title="Tabla de tu liga"
             description="Comparación rápida de fuerza, plantilla y necesidades."
           />
-          <RivalLeagueTable rivals={data?.rivals || []} onDetails={setSelectedRival} />
+          {rivalsLoading &&
+            !(data?.rivals || []).length ? (
+            <div className="rivals-loading-card">
+              <div className="loader small" />
+
+              <div>
+                <strong>
+                  Cargando rivales de forma segura…
+                </strong>
+
+                <p>
+                  Se consulta una plantilla cada vez con una separación mínima de 4 segundos. Puede tardar un poco, pero evita ráfagas contra Biwenger.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <RivalLeagueTable
+              rivals={data?.rivals || []}
+              onDetails={setSelectedRival}
+            />
+          )}
         </main>
       )}
 
