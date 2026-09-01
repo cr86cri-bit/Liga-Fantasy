@@ -3956,3 +3956,58 @@ footer {
     margin-top: 0;
   }
 }
+
+
+/* =========================================================
+   CACHE INTELIGENTE / PROTECCION RATE LIMIT
+   ========================================================= */
+
+.cache-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 10px 13px;
+  border: 1px solid #245137;
+  border-radius: 12px;
+  background: rgba(13, 42, 24, 0.78);
+}
+
+.cache-status strong,
+.cache-status span,
+.cache-status small {
+  display: block;
+}
+
+.cache-status strong {
+  margin-bottom: 2px;
+  color: #82eca5;
+  font-size: 9px;
+}
+
+.cache-status span,
+.cache-status small {
+  color: #718579;
+  font-size: 8px;
+}
+
+.cache-status.rate-limited {
+  border-color: #705321;
+  background: rgba(70, 48, 13, 0.58);
+}
+
+.cache-status.rate-limited strong {
+  color: #ffd36c;
+}
+
+.cache-status.rate-limited small {
+  color: #c6a963;
+}
+
+@media (max-width: 650px) {
+  .cache-status {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

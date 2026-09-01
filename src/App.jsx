@@ -15,6 +15,9 @@ const money = new Intl.NumberFormat("es-ES", {
 const MARKET_SNAPSHOT_KEY =
   "liga-fantasy-market-snapshot-v2";
 
+const DASHBOARD_LOCAL_CACHE_KEY =
+  "liga-fantasy-dashboard-cache-v1";
+
 const NOTIFICATION_HISTORY_KEY =
   "liga-fantasy-notification-history-v1";
 
@@ -2750,71 +2753,194 @@ const sendMarketNotifications = useCallback(
   [pushToast]
 );
 
-  const loadData = useCallback(
-    async ({ silent = false } = {}) => {
-      try {
-        if (!silent) setRefreshing(true);
-        setError("");
+const loadData = useCallback(
+  async ({
+    silent = false,
+    refresh = "smart",
+  } = {}) => {
+    try {
+      if (!silent) {
+        setRefreshing(true);
+      }
 
-        const response = await fetch("/api/dashboard");
-        const body = await response.json();
+      setError("");
 
-        if (!response.ok || !body.ok) {
-          throw new Error(body?.message || "No se pudo cargar Biwenger.");
+      const params =
+        new URLSearchParams({
+          refresh,
+        });
+
+      const response =
+        await fetch(
+          `/api/dashboard?${params.toString()}`
+        );
+
+      const body =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !body.ok
+      ) {
+        throw new Error(
+          body?.message ||
+          "No se pudo cargar Biwenger."
+        );
+      }
+
+      const nextSnapshot =
+        createMarketSnapshot(
+          body.data?.market || []
+        );
+
+      let previousSnapshot =
+        marketSnapshotRef.current;
+
+      if (!previousSnapshot) {
+        try {
+          const stored =
+            window.localStorage.getItem(
+              MARKET_SNAPSHOT_KEY
+            );
+
+          previousSnapshot =
+            stored
+              ? JSON.parse(stored)
+              : null;
+        } catch {
+          previousSnapshot = null;
         }
+      }
 
-        const nextSnapshot = createMarketSnapshot(body.data?.market || []);
-        let previousSnapshot = marketSnapshotRef.current;
-
-        if (!previousSnapshot) {
-          try {
-            const stored = window.localStorage.getItem(MARKET_SNAPSHOT_KEY);
-            previousSnapshot = stored ? JSON.parse(stored) : null;
-          } catch {
-            previousSnapshot = null;
-          }
-        }
-
-        const marketChanges = previousSnapshot
-          ? compareMarketSnapshots(previousSnapshot, nextSnapshot)
+      const marketChanges =
+        previousSnapshot
+          ? compareMarketSnapshots(
+              previousSnapshot,
+              nextSnapshot
+            )
           : [];
 
-        marketSnapshotRef.current = nextSnapshot;
+      marketSnapshotRef.current =
+        nextSnapshot;
 
-        try {
-          window.localStorage.setItem(
-            MARKET_SNAPSHOT_KEY,
-            JSON.stringify(nextSnapshot)
-          );
-        } catch {
-          // localStorage es opcional.
-        }
+      try {
+        window.localStorage.setItem(
+          MARKET_SNAPSHOT_KEY,
+          JSON.stringify(nextSnapshot)
+        );
 
-        setData(body.data);
-        setNow(Date.now());
-
-        if (marketChanges.length) {
-          sendMarketNotifications(marketChanges);
-        }
-      } catch (err) {
-        setError(err?.message || "Error desconocido.");
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
+        window.localStorage.setItem(
+          DASHBOARD_LOCAL_CACHE_KEY,
+          JSON.stringify({
+            savedAt: Date.now(),
+            data: body.data,
+          })
+        );
+      } catch {
+        // localStorage es opcional.
       }
-    },
-    [sendMarketNotifications]
-  );
+
+      setData(body.data);
+      setNow(Date.now());
+
+      if (
+        body.data
+          ?.system
+          ?.rateLimited
+      ) {
+        const until =
+          body.data
+            ?.system
+            ?.rateLimitUntil;
+
+        setError(
+          until
+            ? `Biwenger limitó temporalmente las peticiones. Se usarán datos en caché sin insistir hasta aproximadamente ${new Date(
+                until
+              ).toLocaleTimeString(
+                "es-BO",
+                {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }
+              )}.`
+            : "Biwenger limitó temporalmente las peticiones. Se muestran datos guardados."
+        );
+      }
+
+      if (marketChanges.length) {
+        sendMarketNotifications(
+          marketChanges
+        );
+      }
+    } catch (err) {
+      let localFallback = null;
+
+      try {
+        const raw =
+          window.localStorage.getItem(
+            DASHBOARD_LOCAL_CACHE_KEY
+          );
+
+        localFallback =
+          raw
+            ? JSON.parse(raw)
+            : null;
+      } catch {
+        localFallback = null;
+      }
+
+      if (localFallback?.data) {
+        setData((current) =>
+          current ||
+          {
+            ...localFallback.data,
+
+            system: {
+              ...localFallback.data?.system,
+              servingLocalCache: true,
+            },
+          }
+        );
+
+        setError(
+          `${err?.message || "No se pudo actualizar"}. Se muestran los últimos datos guardados en este navegador.`
+        );
+      } else {
+        setError(
+          err?.message ||
+          "Error desconocido."
+        );
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  },
+  [sendMarketNotifications]
+);
 
   useEffect(() => {
-    loadData();
+    loadData({
+      refresh: "smart",
+    });
 
-    const interval = window.setInterval(
-      () => loadData({ silent: true }),
-      60_000
-    );
+    /*
+     * 3 minutos en frontend.
+     * El backend además tiene TTL por módulo.
+     */
+    const interval =
+      window.setInterval(
+        () =>
+          loadData({
+            silent: true,
+            refresh: "smart",
+          }),
+        180_000
+      );
 
-    return () => window.clearInterval(interval);
+    return () =>
+      window.clearInterval(interval);
   }, [loadData]);
 
   useEffect(() => {
@@ -2987,7 +3113,10 @@ const filteredMarket =
         "El contador llegó a cero. Comprobando el mercado ahora…",
         "market"
       );
-      loadData({ silent: true });
+      loadData({
+        silent: true,
+        refresh: "market",
+      });
     }, Math.max(1000, wait));
 
     return () => {
@@ -3283,6 +3412,9 @@ const executeRealAction =
         await loadData({
           silent:
             true,
+
+          refresh:
+            "action",
         });
       } catch (error) {
         setRealActionError(
@@ -3345,7 +3477,16 @@ const executeRealAction =
         <div className="error-icon">!</div>
         <h1>No se pudo conectar</h1>
         <p className="error-text">{error}</p>
-        <button className="primary-button" onClick={() => loadData()}>Reintentar</button>
+        <button
+          className="primary-button"
+          onClick={() =>
+            loadData({
+              refresh: "core",
+            })
+          }
+        >
+          Reintentar
+        </button>
       </main>
     );
   }
@@ -3364,12 +3505,59 @@ const executeRealAction =
           </p>
         </div>
 
-        <button className="refresh-button" disabled={refreshing} onClick={() => loadData()}>
-          {refreshing ? "Actualizando..." : "Actualizar datos"}
+        <button
+          className="refresh-button"
+          disabled={refreshing}
+          onClick={() =>
+            loadData({
+              refresh: "core",
+            })
+          }
+        >
+          {refreshing
+            ? "Actualizando..."
+            : "Actualizar datos"}
         </button>
       </header>
 
       {error && <div className="warning">{error}</div>}
+
+      {data?.system && (
+        <div
+          className={`cache-status ${
+            data.system.rateLimited
+              ? "rate-limited"
+              : "healthy"
+          }`}
+        >
+          <div>
+            <strong>
+              {data.system.rateLimited
+                ? "🛡 Protección de API activa"
+                : "⚡ Caché inteligente activa"}
+            </strong>
+
+            <span>
+              Mercado 3 min · Tu equipo 5 min · Rivales 15 min · Catálogo 60 min
+            </span>
+          </div>
+
+          {data.system.rateLimitUntil && (
+            <small>
+              Cooldown hasta{" "}
+              {new Date(
+                data.system.rateLimitUntil
+              ).toLocaleTimeString(
+                "es-BO",
+                {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }
+              )}
+            </small>
+          )}
+        </div>
+      )}
 
       <section className="metrics">
         <Metric label="Jugadores" value={data?.squad?.length || 0} description="Plantilla" />
@@ -3412,7 +3600,7 @@ const executeRealAction =
           <SectionHeader
             label="MERCADO INTELIGENTE"
             title="Mercado actual"
-            description="El sistema comprueba cambios cada 60 segundos y al llegar el contador general a cero."
+            description="Actualización inteligente: mercado cada 3 min, rivales cada 15 min y catálogo cada 60 min. Los contadores siguen en tiempo real sin consultar Biwenger."
           >
             <div className="market-filter-controls">
   <MarketFilters

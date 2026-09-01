@@ -162,3 +162,38 @@ La opción **Rechazar ofertas existentes** está desactivada por defecto.
 
 Las escrituras no se reintentan automáticamente. Los endpoints de Biwenger son
 internos/no oficiales y pueden cambiar.
+
+## Protección contra el límite de peticiones
+
+Se cambió la estrategia de actualización:
+
+- Mercado: **3 minutos**
+- Tu plantilla: **5 minutos**
+- Usuarios y plantillas rivales: **15 minutos**
+- Catálogo de LaLiga: **60 minutos**
+- Contadores: cada segundo en el navegador, **sin llamar a Biwenger**
+
+También se añadieron:
+
+- deduplicación de peticiones simultáneas;
+- concurrencia máxima de 2 al cargar plantillas rivales;
+- ventana mínima incluso al pulsar Actualizar;
+- `cf.biwenger.com` como primera opción para el catálogo público;
+- detección de HTTP 429 y del mensaje de máximo de peticiones;
+- cooldown automático de 30 min si Biwenger no indica `Retry-After`;
+- uso de caché vencida durante el cooldown en vez de seguir insistiendo;
+- snapshot del dashboard en `.cache/dashboard.json`;
+- respaldo del último dashboard en `localStorage`;
+- después de pujar/vender solo se invalida mercado y usuario.
+
+### Sobre `analytics`
+
+No había dos sistemas ejecutándose. `server/analytics.js` era solo un
+**puente de compatibilidad** que reexportaba `server/analytics/index.js`.
+
+Como ningún archivo actual lo necesitaba, se eliminó. También se eliminó
+`server/biwenger.js` y ahora el servidor importa directamente
+`server/biwenger/BiwengerClient.js`.
+
+`server/analytics/` queda únicamente con los módulos reales de análisis:
+jugadores, mercado, fixtures, Mejor XI, rivales, configuración y utilidades.

@@ -5,7 +5,7 @@ import express from "express";
 
 import {
   BiwengerClient,
-} from "./biwenger.js";
+} from "./biwenger/BiwengerClient.js";
 
 import {
   SofaScoreClient,
@@ -258,10 +258,18 @@ app.post(
   }
 );
 
-app.get("/api/dashboard", async (_req, res) => {
+app.get("/api/dashboard", async (req, res) => {
   try {
+    const refresh =
+      String(
+        req.query?.refresh ||
+        "smart"
+      ).trim();
+
     const data =
-      await getClient().obtenerDashboard();
+      await getClient().obtenerDashboard({
+        refresh,
+      });
 
     res.json({
       ok: true,
@@ -281,10 +289,18 @@ app.get("/api/dashboard", async (_req, res) => {
 
 app.post("/api/reconnect", async (_req, res) => {
   try {
-    client = null;
+    const biwenger =
+      getClient();
+
+    biwenger.invalidarCache({
+      market: true,
+      ownUser: true,
+    });
 
     const data =
-      await getClient().obtenerDashboard();
+      await biwenger.obtenerDashboard({
+        refresh: "core",
+      });
 
     res.json({
       ok: true,

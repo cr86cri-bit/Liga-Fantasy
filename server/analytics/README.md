@@ -1,34 +1,18 @@
-# Liga Fantasy
+# Analytics
 
-Dashboard personal para consultar y analizar una liga de Biwenger.
+Esta carpeta contiene solamente la lógica de análisis del dashboard.
 
-## Funciones
+No es una copia del sistema:
 
-- Mi equipo: foto, club, estado, últimas puntuaciones, puntos y tendencia.
-- Analizador automático 0-100.
-- Mercado inteligente: barato/caro, puntos por millón y puja máxima recomendada.
-- Mejor XI automático con capitán y delantero especial.
-- Próximo rival, local/visitante y dificultad.
-- Rivales de la liga y estimación de competencia por fichajes.
+- `player/`: nota y recomendación del jugador.
+- `market/`: precio, competencia y puja recomendada.
+- `lineup/`: proyección y Mejor XI.
+- `fixtures/`: próximos partidos y dificultad.
+- `rivals/`: análisis de plantillas rivales.
+- `config/`: parámetros del modelo.
+- `utils/`: utilidades matemáticas.
+- `index.js`: único punto de exportación.
 
-> El proyecto es de solo lectura. No realiza pujas, ventas ni cambios de alineación en Biwenger.
-
-## Instalación
-
-```powershell
-npm install
-Copy-Item .env.example .env
-```
-
-Edita `.env` y coloca tu token de sesión de Biwenger únicamente en tu computadora.
-
-```powershell
-npm run dev
-```
-
-Frontend: http://localhost:5173  
-Backend: http://localhost:3001
-
-## Seguridad
-
-`.env` está ignorado por Git. No subas tu token a GitHub.
+Se eliminó `server/analytics.js` porque era un puente de compatibilidad que
+simplemente reexportaba `server/analytics/index.js`. No contenía otra copia de
+la lógica, pero podía dar esa impresión.
