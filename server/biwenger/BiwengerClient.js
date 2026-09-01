@@ -763,7 +763,7 @@ export class BiwengerClient {
         loader:
           () =>
             this.request(
-              "/user?fields=lineup(date,type,captain,striker,playersID,reservesID)"
+              "/user?fields=lineup(date,type,captain,playersID,reservesID)"
             ),
       }
     );
@@ -965,9 +965,6 @@ export class BiwengerClient {
               [],
 
             captain:
-              0,
-
-            striker:
               0,
           };
       }
@@ -1876,7 +1873,6 @@ async guardarAlineacion({
   playersID,
   reservesID = [],
   captain = 0,
-  striker = 0,
 }) {
   await this.inicializar();
 
@@ -2144,79 +2140,6 @@ async guardarAlineacion({
     );
   }
 
-  const strikerId =
-    Number(
-      striker ||
-      0
-    );
-
-  if (
-    strikerId !==
-      0 &&
-    !starters.includes(
-      strikerId
-    )
-  ) {
-    throw new Error(
-      "El ariete debe formar parte del XI titular."
-    );
-  }
-
-  if (
-    strikerId !==
-    0
-  ) {
-    const strikerRaw =
-      catalogPlayers[
-        String(
-          strikerId
-        )
-      ] ||
-      {};
-
-    if (
-      Number(
-        strikerRaw
-          ?.position ||
-        0
-      ) !==
-      4
-    ) {
-      throw new Error(
-        "El ariete debe ser un delantero."
-      );
-    }
-  }
-
-  const lineupPayload = {
-    type:
-      formation,
-
-    playersID:
-      starters,
-
-    reservesID:
-      sanitizedReserves,
-
-    captain:
-      captainId,
-  };
-
-  /*
-   * Biwenger expone `striker` dentro de lineup cuando la
-   * liga tiene habilitado el ariete. Enviamos 0 cuando el
-   * usuario no ha seleccionado ninguno, igual que con capitán.
-   */
-  if (
-    this.league
-      ?.settings
-      ?.lineupStriker !==
-    false
-  ) {
-    lineupPayload.striker =
-      strikerId;
-  }
-
   const result =
     await this.writeRequest(
       "/user?fields=*,lineup(date)",
@@ -2225,8 +2148,19 @@ async guardarAlineacion({
           "PUT",
 
         body: {
-          lineup:
-            lineupPayload,
+          lineup: {
+            type:
+              formation,
+
+            playersID:
+              starters,
+
+            reservesID:
+              sanitizedReserves,
+
+            captain:
+              captainId,
+          },
         },
       }
     );
@@ -2250,9 +2184,6 @@ async guardarAlineacion({
 
     captain:
       captainId,
-
-    striker:
-      strikerId,
 
     biwenger:
       result,

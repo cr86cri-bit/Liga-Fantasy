@@ -2288,130 +2288,49 @@ const LINEUP_FORMATIONS = [
   { name: "5-4-1", AR: 1, DF: 5, MC: 4, DL: 1 },
 ];
 
-function lineupRoleId(
-  lineup,
-  role
-) {
-  const value =
-    lineup?.[
-      role
-    ];
-
+function lineupCaptainId(lineup) {
   if (
-    value &&
-    typeof value ===
-      "object"
+    lineup?.captain &&
+    typeof lineup.captain === "object"
   ) {
-    return Number(
-      value.id ||
-      0
-    );
+    return Number(lineup.captain.id || 0);
   }
 
-  return Number(
-    value ||
-    0
-  );
+  return Number(lineup?.captain || 0);
 }
 
-function lineupPlayerIds(
-  lineup
-) {
-  return (
-    lineup
-      ?.playersID ||
-    []
-  )
-    .map(Number)
-    .filter(
-      (id) =>
-        Number.isInteger(
-          id
-        ) &&
-        id >
-        0
-    );
-}
-
-function sortLineupCandidates(
-  players,
-  bestXI
-) {
+function sortLineupCandidates(players, bestXI) {
   const projectedMap =
     new Map(
-      (
-        bestXI?.players ||
-        []
-      ).map(
+      (bestXI?.players || []).map(
         (player) => [
-          Number(
-            player.id
-          ),
-          Number(
-            player.projectedPoints ||
-            0
-          ),
+          Number(player.id),
+          Number(player.projectedPoints || 0),
         ]
       )
     );
 
-  return [
-    ...players,
-  ].sort(
+  return [...players].sort(
     (a, b) => {
       const projectedDiff =
-        Number(
-          projectedMap.get(
-            Number(
-              b.id
-            )
-          ) ||
-          0
-        ) -
-        Number(
-          projectedMap.get(
-            Number(
-              a.id
-            )
-          ) ||
-          0
-        );
+        Number(projectedMap.get(Number(b.id)) || 0) -
+        Number(projectedMap.get(Number(a.id)) || 0);
 
-      if (
-        projectedDiff !==
-        0
-      ) {
+      if (projectedDiff !== 0) {
         return projectedDiff;
       }
 
       const analysisDiff =
-        Number(
-          b.analysis
-            ?.score ||
-          0
-        ) -
-        Number(
-          a.analysis
-            ?.score ||
-          0
-        );
+        Number(b.analysis?.score || 0) -
+        Number(a.analysis?.score || 0);
 
-      if (
-        analysisDiff !==
-        0
-      ) {
+      if (analysisDiff !== 0) {
         return analysisDiff;
       }
 
       return (
-        Number(
-          b.points ||
-          0
-        ) -
-        Number(
-          a.points ||
-          0
-        )
+        Number(b.points || 0) -
+        Number(a.points || 0)
       );
     }
   );
@@ -2425,143 +2344,66 @@ function buildLineupForFormation({
 }) {
   const config =
     LINEUP_FORMATIONS.find(
-      (item) =>
-        item.name ===
-        formation
-    ) ||
-    LINEUP_FORMATIONS[3];
+      (item) => item.name === formation
+    ) || LINEUP_FORMATIONS[3];
 
   const available =
-    (
-      squad ||
-      []
-    ).filter(
-      (player) =>
-        !player.isForSale
+    (squad || []).filter(
+      (player) => !player.isForSale
     );
 
-  const preferredOrder =
-    new Map(
-      (
-        preferredIds ||
-        []
-      ).map(
-        (
-          id,
-          index
-        ) => [
-          Number(
-            id
-          ),
-          index,
-        ]
-      )
+  const preferred =
+    new Set(
+      (preferredIds || []).map(Number)
     );
 
-  const selected =
-    [];
+  const selected = [];
 
   for (
     const position of
-      [
-        "AR",
-        "DF",
-        "MC",
-        "DL",
-      ]
+      ["AR", "DF", "MC", "DL"]
   ) {
     const needed =
-      Number(
-        config[
-          position
-        ] ||
-        0
-      );
+      Number(config[position] || 0);
 
     const pool =
       sortLineupCandidates(
         available.filter(
           (player) =>
-            player.position ===
-            position
+            player.position === position
         ),
         bestXI
       );
 
-    /*
-     * Si un jugador ya estaba en la alineación real,
-     * respetamos su orden horizontal dentro de la línea.
-     */
     const preferredPlayers =
-      pool
-        .filter(
-          (player) =>
-            preferredOrder.has(
-              Number(
-                player.id
-              )
-            )
-        )
-        .sort(
-          (a, b) =>
-            preferredOrder.get(
-              Number(
-                a.id
-              )
-            ) -
-            preferredOrder.get(
-              Number(
-                b.id
-              )
-            )
-        );
+      pool.filter(
+        (player) =>
+          preferred.has(Number(player.id))
+      );
 
     const rest =
       pool.filter(
         (player) =>
-          !preferredOrder.has(
-            Number(
-              player.id
-            )
-          )
+          !preferred.has(Number(player.id))
       );
 
     selected.push(
       ...[
         ...preferredPlayers,
         ...rest,
-      ].slice(
-        0,
-        needed
-      )
+      ].slice(0, needed)
     );
   }
 
   return selected.map(
-    (player) =>
-      Number(
-        player.id
-      )
+    (player) => Number(player.id)
   );
 }
 
-function orderedLineupIds(
-  selectedIds,
-  squad
-) {
-  const playerById =
-    new Map(
-      (
-        squad ||
-        []
-      ).map(
-        (player) => [
-          Number(
-            player.id
-          ),
-          player,
-        ]
-      )
+function orderedLineupIds(selectedIds, squad) {
+  const selected =
+    new Set(
+      selectedIds.map(Number)
     );
 
   const byPosition = {
@@ -2571,37 +2413,13 @@ function orderedLineupIds(
     DL: [],
   };
 
-  /*
-   * MUY IMPORTANTE:
-   * recorremos selectedIds, no squad.
-   * Así el orden izquierda→derecha escogido en el XI
-   * se conserva dentro de cada línea.
-   */
-  for (
-    const rawId of
-      selectedIds ||
-      []
-  ) {
-    const id =
-      Number(
-        rawId
-      );
-
-    const player =
-      playerById.get(
-        id
-      );
-
+  for (const player of squad || []) {
     if (
-      player &&
-      byPosition[
-        player.position
-      ]
+      selected.has(Number(player.id)) &&
+      byPosition[player.position]
     ) {
-      byPosition[
-        player.position
-      ].push(
-        id
+      byPosition[player.position].push(
+        Number(player.id)
       );
     }
   }
@@ -2614,46 +2432,11 @@ function orderedLineupIds(
   ];
 }
 
-function playersInLineupOrder(
-  selectedIds,
-  squad
-) {
-  const playerById =
-    new Map(
-      (
-        squad ||
-        []
-      ).map(
-        (player) => [
-          Number(
-            player.id
-          ),
-          player,
-        ]
-      )
-    );
-
-  return (
-    selectedIds ||
-    []
-  )
-    .map(
-      (id) =>
-        playerById.get(
-          Number(
-            id
-          )
-        )
-    )
-    .filter(Boolean);
-}
-
 function LineupConfirmModal({
   open,
   formation,
   players,
   captain,
-  striker,
   loading,
   error,
   onClose,
@@ -2666,19 +2449,13 @@ function LineupConfirmModal({
 
   useEffect(() => {
     if (open) {
-      setAcknowledged(
-        false
-      );
+      setAcknowledged(false);
     }
-  }, [
-    open,
-  ]);
+  }, [open]);
 
   return (
     <Modal
-      open={
-        open
-      }
+      open={open}
       onClose={() => {
         if (!loading) {
           onClose();
@@ -2689,9 +2466,7 @@ function LineupConfirmModal({
       wide
     >
       <div className="real-action-warning">
-        <span>
-          ⚠
-        </span>
+        <span>⚠</span>
 
         <div>
           <strong>
@@ -2699,129 +2474,56 @@ function LineupConfirmModal({
           </strong>
 
           <p>
-            Revisa formación, titulares, capitán y ariete antes
-            de confirmar. La operación se enviará una sola vez.
+            Revisa los 11 titulares antes de confirmar.
+            La operación se enviará una sola vez a Biwenger.
           </p>
         </div>
       </div>
 
-      <div className="lineup-confirm-summary lineup-confirm-summary-four">
+      <div className="lineup-confirm-summary">
         <div>
-          <span>
-            Formación
-          </span>
-
-          <strong>
-            {formation}
-          </strong>
+          <span>Formación</span>
+          <strong>{formation}</strong>
         </div>
 
         <div>
-          <span>
-            Titulares
-          </span>
-
-          <strong>
-            {players.length}/11
-          </strong>
+          <span>Titulares</span>
+          <strong>{players.length}/11</strong>
         </div>
 
         <div>
-          <span>
-            Capitán
-          </span>
-
+          <span>Capitán</span>
           <strong>
-            {captain?.name ||
-              "Sin capitán"}
-          </strong>
-        </div>
-
-        <div>
-          <span>
-            Ariete
-          </span>
-
-          <strong>
-            {striker?.name ||
-              "Sin ariete"}
+            {captain?.name || "Sin capitán"}
           </strong>
         </div>
       </div>
 
       <div className="lineup-confirm-players">
-        {players.map(
-          (player) => {
-            const isCaptain =
-              Number(
-                captain?.id ||
-                0
-              ) ===
-              Number(
-                player.id
-              );
+        {players.map((player) => (
+          <div key={player.id}>
+            <Position position={player.position} />
 
-            const isStriker =
-              Number(
-                striker?.id ||
-                0
-              ) ===
-              Number(
-                player.id
-              );
+            <span>{player.name}</span>
 
-            return (
-              <div
-                key={
-                  player.id
-                }
-              >
-                <Position
-                  position={
-                    player.position
-                  }
-                />
-
-                <span>
-                  {player.name}
-                </span>
-
-                <div className="lineup-confirm-roles">
-                  {isCaptain && (
-                    <b className="role-captain">
-                      C
-                    </b>
-                  )}
-
-                  {isStriker && (
-                    <b className="role-striker">
-                      9
-                    </b>
-                  )}
-                </div>
-              </div>
-            );
-          }
-        )}
+            {Number(captain?.id || 0) ===
+              Number(player.id) && (
+              <b>C</b>
+            )}
+          </div>
+        ))}
       </div>
 
       <label className="real-action-checkbox">
         <input
           type="checkbox"
-          checked={
-            acknowledged
+          checked={acknowledged}
+          onChange={(event) =>
+            setAcknowledged(
+              event.target.checked
+            )
           }
-          onChange={
-            (event) =>
-              setAcknowledged(
-                event
-                  .target
-                  .checked
-              )
-          }
-          disabled={
-            loading
-          }
+          disabled={loading}
         />
 
         <span>
@@ -2845,12 +2547,8 @@ function LineupConfirmModal({
         <button
           type="button"
           className="real-action-cancel"
-          onClick={
-            onClose
-          }
-          disabled={
-            loading
-          }
+          onClick={onClose}
+          disabled={loading}
         >
           Cancelar
         </button>
@@ -2862,9 +2560,7 @@ function LineupConfirmModal({
             !acknowledged ||
             loading
           }
-          onClick={
-            onConfirm
-          }
+          onClick={onConfirm}
         >
           {loading
             ? "Guardando..."
@@ -2879,51 +2575,38 @@ function BestXI({
   bestXI,
   squad,
   savedLineup,
-  lineupSettings,
   onPlayerDetails,
   onSaveLineup,
   saving,
   saveError,
 }) {
-  const fullSquad =
-    squad ||
-    [];
-
-  const editableSquad =
+  const availableSquad =
     useMemo(
       () =>
-        fullSquad.filter(
-          (player) =>
-            !player.isForSale
+        (squad || []).filter(
+          (player) => !player.isForSale
         ),
-      [
-        fullSquad,
-      ]
+      [squad]
     );
+
+  const defaultFormation =
+    LINEUP_FORMATIONS.some(
+      (item) =>
+        item.name === savedLineup?.type
+    )
+      ? savedLineup.type
+      : LINEUP_FORMATIONS.some(
+          (item) =>
+            item.name === bestXI?.formation
+        )
+        ? bestXI.formation
+        : "4-4-2";
 
   const lineupReady =
     savedLineup !==
       undefined &&
     savedLineup !==
       null;
-
-  const savedFormation =
-    LINEUP_FORMATIONS.some(
-      (item) =>
-        item.name ===
-        savedLineup?.type
-    )
-      ? savedLineup.type
-      : null;
-
-  const recommendedFormation =
-    LINEUP_FORMATIONS.some(
-      (item) =>
-        item.name ===
-        bestXI?.formation
-    )
-      ? bestXI.formation
-      : "4-4-2";
 
   const [
     editing,
@@ -2933,10 +2616,7 @@ function BestXI({
   const [
     formation,
     setFormation,
-  ] = useState(
-    savedFormation ||
-    recommendedFormation
-  );
+  ] = useState(defaultFormation);
 
   const [
     selectedIds,
@@ -2949,126 +2629,91 @@ function BestXI({
   ] = useState(0);
 
   const [
-    strikerId,
-    setStrikerId,
-  ] = useState(0);
-
-  const [
     confirmOpen,
     setConfirmOpen,
   ] = useState(false);
 
-  /*
-   * Vista normal:
-   * la fuente de verdad es Biwenger, NO nuestro algoritmo.
-   *
-   * Antes reconstruíamos el XI recomendado aunque Biwenger ya
-   * hubiera devuelto playersID. Eso provocaba:
-   * - orden horizontal distinto;
-   * - capitán inventado por el algoritmo;
-   * - ariete inventado por el algoritmo.
-   */
   useEffect(() => {
     if (editing) {
       return;
     }
 
     const currentIds =
-      lineupPlayerIds(
-        savedLineup
+      (savedLineup?.playersID || [])
+        .map(Number)
+        .filter(Boolean);
+
+    const recommendationIds =
+      (bestXI?.players || []).map(
+        (player) => Number(player.id)
       );
 
     const nextFormation =
-      savedFormation ||
-      recommendedFormation;
+      LINEUP_FORMATIONS.some(
+        (item) =>
+          item.name === savedLineup?.type
+      )
+        ? savedLineup.type
+        : LINEUP_FORMATIONS.some(
+            (item) =>
+              item.name === bestXI?.formation
+          )
+          ? bestXI.formation
+          : "4-4-2";
 
-    setFormation(
-      nextFormation
+    setFormation(nextFormation);
+
+    setSelectedIds(
+      buildLineupForFormation({
+        squad: availableSquad,
+        formation: nextFormation,
+        preferredIds:
+          currentIds.length === 11
+            ? currentIds
+            : recommendationIds,
+        bestXI,
+      })
     );
 
-    if (
-      currentIds.length ===
-      11
-    ) {
-      /*
-       * Guardamos EXACTAMENTE el orden recibido en playersID.
-       * Al filtrar posteriormente por posición se conserva el
-       * orden izquierda→derecha dentro de cada línea.
-       */
-      setSelectedIds(
-        currentIds
-      );
-    } else {
-      setSelectedIds(
-        buildLineupForFormation({
-          squad:
-            editableSquad,
+    const currentCaptain =
+      lineupCaptainId(savedLineup);
 
-          formation:
-            nextFormation,
+    const recommendedCaptain =
+      Number(bestXI?.captain?.id || 0);
 
-          preferredIds:
-            (
-              bestXI?.players ||
-              []
-            ).map(
-              (player) =>
-                Number(
-                  player.id
-                )
-            ),
-
-          bestXI,
-        })
-      );
-    }
-
-    /*
-     * Cero significa realmente "sin capitán / sin ariete".
-     * Ya no usamos fallback del Mejor XI.
-     */
     setCaptainId(
-      lineupRoleId(
-        savedLineup,
-        "captain"
-      )
-    );
-
-    setStrikerId(
-      lineupRoleId(
-        savedLineup,
-        "striker"
-      )
+      currentCaptain ||
+      recommendedCaptain ||
+      0
     );
   }, [
-    editing,
-    savedLineup,
-    savedFormation,
-    recommendedFormation,
-    editableSquad,
     bestXI,
+    savedLineup,
+    availableSquad,
+    editing,
   ]);
 
   const config =
     LINEUP_FORMATIONS.find(
       (item) =>
-        item.name ===
-        formation
-    ) ||
-    LINEUP_FORMATIONS[3];
+        item.name === formation
+    ) || LINEUP_FORMATIONS[3];
 
   const selectedPlayers =
-    useMemo(
-      () =>
-        playersInLineupOrder(
-          selectedIds,
-          fullSquad
-        ),
-      [
-        selectedIds,
-        fullSquad,
-      ]
-    );
+    useMemo(() => {
+      const selected =
+        new Set(
+          selectedIds.map(Number)
+        );
+
+      return (availableSquad || []).filter(
+        (player) =>
+          selected.has(Number(player.id))
+      );
+    }, [
+      availableSquad,
+      selectedIds,
+    ]);
 
   const counts =
     useMemo(
@@ -3076,368 +2721,123 @@ function BestXI({
         AR:
           selectedPlayers.filter(
             (player) =>
-              player.position ===
-              "AR"
+              player.position === "AR"
           ).length,
-
         DF:
           selectedPlayers.filter(
             (player) =>
-              player.position ===
-              "DF"
+              player.position === "DF"
           ).length,
-
         MC:
           selectedPlayers.filter(
             (player) =>
-              player.position ===
-              "MC"
+              player.position === "MC"
           ).length,
-
         DL:
           selectedPlayers.filter(
             (player) =>
-              player.position ===
-              "DL"
+              player.position === "DL"
           ).length,
       }),
-      [
-        selectedPlayers,
-      ]
+      [selectedPlayers]
     );
 
   const valid =
-    selectedIds.length ===
-      11 &&
-    [
-      "AR",
-      "DF",
-      "MC",
-      "DL",
-    ].every(
+    selectedIds.length === 11 &&
+    ["AR", "DF", "MC", "DL"].every(
       (position) =>
-        counts[
-          position
-        ] ===
-        Number(
-          config[
-            position
-          ] ||
-          0
-        )
-    ) &&
-    selectedPlayers.every(
-      (player) =>
-        !player.isForSale
+        counts[position] ===
+        Number(config[position] || 0)
     );
 
   const currentCaptain =
     selectedPlayers.find(
       (player) =>
-        Number(
-          player.id
-        ) ===
-        Number(
-          captainId
-        )
-    ) ||
-    null;
-
-  const currentStriker =
-    selectedPlayers.find(
-      (player) =>
-        Number(
-          player.id
-        ) ===
-        Number(
-          strikerId
-        )
-    ) ||
-    null;
-
-  const strikerEnabled =
-    lineupSettings
-      ?.lineupStriker !==
-    false;
-
-  const startEditing =
-    () => {
-      const currentIds =
-        lineupPlayerIds(
-          savedLineup
-        );
-
-      const currentAvailableIds =
-        currentIds.filter(
-          (id) =>
-            editableSquad.some(
-              (player) =>
-                Number(
-                  player.id
-                ) ===
-                Number(
-                  id
-                )
-            )
-        );
-
-      /*
-       * Si un jugador real está en venta, al entrar a editar
-       * se reemplaza por el mejor candidato disponible.
-       * La vista normal continúa representando Biwenger tal cual.
-       */
-      const nextIds =
-        buildLineupForFormation({
-          squad:
-            editableSquad,
-
-          formation:
-            savedFormation ||
-            recommendedFormation,
-
-          preferredIds:
-            currentAvailableIds,
-
-          bestXI,
-        });
-
-      setFormation(
-        savedFormation ||
-        recommendedFormation
-      );
-
-      setSelectedIds(
-        nextIds
-      );
-
-      const savedCaptain =
-        lineupRoleId(
-          savedLineup,
-          "captain"
-        );
-
-      const savedStriker =
-        lineupRoleId(
-          savedLineup,
-          "striker"
-        );
-
-      setCaptainId(
-        nextIds.includes(
-          savedCaptain
-        )
-          ? savedCaptain
-          : 0
-      );
-
-      setStrikerId(
-        nextIds.includes(
-          savedStriker
-        )
-          ? savedStriker
-          : 0
-      );
-
-      setEditing(
-        true
-      );
-    };
+        Number(player.id) ===
+        Number(captainId)
+    ) || null;
 
   const changeFormation =
     (nextFormation) => {
-      setFormation(
-        nextFormation
-      );
+      setFormation(nextFormation);
 
       const nextIds =
         buildLineupForFormation({
-          squad:
-            editableSquad,
-
-          formation:
-            nextFormation,
-
-          preferredIds:
-            selectedIds,
-
+          squad: availableSquad,
+          formation: nextFormation,
+          preferredIds: selectedIds,
           bestXI,
         });
 
-      setSelectedIds(
-        nextIds
-      );
+      setSelectedIds(nextIds);
 
       if (
         captainId &&
         !nextIds.includes(
-          Number(
-            captainId
-          )
+          Number(captainId)
         )
       ) {
-        setCaptainId(
-          0
-        );
-      }
-
-      if (
-        strikerId &&
-        !nextIds.includes(
-          Number(
-            strikerId
-          )
-        )
-      ) {
-        setStrikerId(
-          0
-        );
+        setCaptainId(0);
       }
     };
 
   const useRecommendation =
     () => {
+      const recommendedFormation =
+        LINEUP_FORMATIONS.some(
+          (item) =>
+            item.name === bestXI?.formation
+        )
+          ? bestXI.formation
+          : formation;
+
       const recommendationIds =
-        (
-          bestXI?.players ||
-          []
-        ).map(
-          (player) =>
-            Number(
-              player.id
-            )
+        (bestXI?.players || []).map(
+          (player) => Number(player.id)
         );
 
-      const nextIds =
-        buildLineupForFormation({
-          squad:
-            editableSquad,
-
-          formation:
-            recommendedFormation,
-
-          preferredIds:
-            recommendationIds,
-
-          bestXI,
-        });
-
-      setFormation(
-        recommendedFormation
-      );
+      setFormation(recommendedFormation);
 
       setSelectedIds(
-        nextIds
+        buildLineupForFormation({
+          squad: availableSquad,
+          formation:
+            recommendedFormation,
+          preferredIds:
+            recommendationIds,
+          bestXI,
+        })
       );
-
-      const recommendedCaptain =
-        Number(
-          bestXI
-            ?.captain
-            ?.id ||
-          0
-        );
 
       setCaptainId(
-        nextIds.includes(
-          recommendedCaptain
-        )
-          ? recommendedCaptain
-          : 0
-      );
-
-      const recommendedStriker =
-        nextIds
-          .map(
-            (id) =>
-              editableSquad.find(
-                (player) =>
-                  Number(
-                    player.id
-                  ) ===
-                  Number(
-                    id
-                  )
-              )
-          )
-          .filter(
-            (player) =>
-              player
-                ?.position ===
-              "DL"
-          )
-          .sort(
-            (a, b) =>
-              Number(
-                b.analysis
-                  ?.score ||
-                0
-              ) -
-              Number(
-                a.analysis
-                  ?.score ||
-                0
-              )
-          )[0];
-
-      setStrikerId(
-        strikerEnabled
-          ? Number(
-              recommendedStriker
-                ?.id ||
-              0
-            )
-          : 0
+        Number(bestXI?.captain?.id || 0)
       );
     };
 
   const togglePlayer =
     (player) => {
-      if (
-        player.isForSale
-      ) {
+      if (player.isForSale) {
         return;
       }
 
       const id =
-        Number(
-          player.id
-        );
+        Number(player.id);
 
       const exists =
-        selectedIds.includes(
-          id
-        );
+        selectedIds.includes(id);
 
       if (exists) {
         setSelectedIds(
           (current) =>
             current.filter(
-              (item) =>
-                item !==
-                id
+              (item) => item !== id
             )
         );
 
         if (
-          Number(
-            captainId
-          ) ===
-          id
+          Number(captainId) === id
         ) {
-          setCaptainId(
-            0
-          );
-        }
-
-        if (
-          Number(
-            strikerId
-          ) ===
-          id
-        ) {
-          setStrikerId(
-            0
-          );
+          setCaptainId(0);
         }
 
         return;
@@ -3445,163 +2845,89 @@ function BestXI({
 
       const needed =
         Number(
-          config[
-            player.position
-          ] ||
-          0
+          config[player.position] || 0
         );
 
       const currentCount =
-        counts[
-          player.position
-        ] ||
-        0;
+        counts[player.position] || 0;
 
       if (
-        currentCount >=
-        needed
+        currentCount >= needed
       ) {
         return;
       }
 
-      /*
-       * Añadimos al final de su línea, no al final global.
-       * Así mantenemos un orden estable para playersID.
-       */
       setSelectedIds(
-        (current) => {
-          const playerById =
-            new Map(
-              fullSquad.map(
-                (item) => [
-                  Number(
-                    item.id
-                  ),
-                  item,
-                ]
-              )
-            );
-
-          const positionOrder = {
-            AR: 0,
-            DF: 1,
-            MC: 2,
-            DL: 3,
-          };
-
-          return [
-            ...current,
-            id,
-          ].sort(
-            (
-              leftId,
-              rightId
-            ) => {
-              const left =
-                playerById.get(
-                  Number(
-                    leftId
-                  )
-                );
-
-              const right =
-                playerById.get(
-                  Number(
-                    rightId
-                  )
-                );
-
-              return (
-                Number(
-                  positionOrder[
-                    left
-                      ?.position
-                  ] ??
-                  99
-                ) -
-                Number(
-                  positionOrder[
-                    right
-                      ?.position
-                  ] ??
-                  99
-                )
-              );
-            }
-          );
-        }
+        (current) => [
+          ...current,
+          id,
+        ]
       );
     };
 
-  const pitchPlayers =
-    selectedPlayers.map(
-      (player) => ({
-        ...player,
+  const pitchXI = {
+    formation,
 
-        projectedPoints:
-          bestXI
-            ?.players
-            ?.find(
-              (item) =>
-                Number(
-                  item.id
-                ) ===
-                Number(
-                  player.id
-                )
-            )
-            ?.projectedPoints ||
-          0,
-      })
-    );
+    players:
+      selectedPlayers.map(
+        (player) => ({
+          ...player,
 
-  /*
-   * Como pitchPlayers ya está en orden playersID, cada filter
-   * conserva el mismo orden horizontal que devuelve Biwenger.
-   */
-  const groups = {
-    DL:
-      pitchPlayers.filter(
-        (player) =>
-          player.position ===
-          "DL"
+          projectedPoints:
+            bestXI
+              ?.players
+              ?.find(
+                (item) =>
+                  Number(item.id) ===
+                  Number(player.id)
+              )
+              ?.projectedPoints ||
+            0,
+        })
       ),
 
-    MC:
-      pitchPlayers.filter(
-        (player) =>
-          player.position ===
-          "MC"
-      ),
-
-    DF:
-      pitchPlayers.filter(
-        (player) =>
-          player.position ===
-          "DF"
-      ),
-
-    AR:
-      pitchPlayers.filter(
-        (player) =>
-          player.position ===
-          "AR"
-      ),
-  };
-
-  const roleState = {
     captain:
       currentCaptain,
 
     striker:
-      currentStriker,
+      selectedPlayers
+        .filter(
+          (player) =>
+            player.position === "DL"
+        )
+        .sort(
+          (a, b) =>
+            Number(
+              b.analysis?.score || 0
+            ) -
+            Number(
+              a.analysis?.score || 0
+            )
+        )[0] || null,
   };
 
-  const currentLineupComplete =
-    lineupPlayerIds(
-      savedLineup
-    ).length ===
-    11;
+  const groups = {
+    DL:
+      pitchXI.players.filter(
+        (player) =>
+          player.position === "DL"
+      ),
+    MC:
+      pitchXI.players.filter(
+        (player) =>
+          player.position === "MC"
+      ),
+    DF:
+      pitchXI.players.filter(
+        (player) =>
+          player.position === "DF"
+      ),
+    AR:
+      pitchXI.players.filter(
+        (player) =>
+          player.position === "AR"
+      ),
+  };
 
   if (
     !bestXI?.players?.length &&
@@ -3609,7 +2935,7 @@ function BestXI({
   ) {
     return (
       <div className="empty-state">
-        No se pudo obtener una alineación.
+        No se pudo generar un XI con la plantilla disponible.
       </div>
     );
   }
@@ -3621,7 +2947,7 @@ function BestXI({
           <span className="section-label">
             {editing
               ? "EDITOR DE ALINEACIÓN"
-              : "ALINEACIÓN ACTUAL · BIWENGER"}
+              : "MEJOR XI AUTOMÁTICO"}
           </span>
 
           <h2>
@@ -3631,9 +2957,14 @@ function BestXI({
           <p>
             {editing
               ? `${selectedIds.length}/11 titulares seleccionados`
-              : currentLineupComplete
-                ? "El campo refleja los 11 titulares y roles guardados actualmente en Biwenger."
-                : "Biwenger no devolvió 11 titulares completos; se muestra una propuesta temporal."}
+              : (
+                <>
+                  Proyección base:{" "}
+                  <strong>
+                    {bestXI?.totalProjection || 0} pts
+                  </strong>
+                </>
+              )}
           </p>
         </div>
 
@@ -3645,8 +2976,8 @@ function BestXI({
               disabled={
                 !lineupReady
               }
-              onClick={
-                startEditing
+              onClick={() =>
+                setEditing(true)
               }
             >
               {lineupReady
@@ -3658,9 +2989,7 @@ function BestXI({
               <button
                 type="button"
                 className="xi-secondary-button"
-                onClick={
-                  useRecommendation
-                }
+                onClick={useRecommendation}
               >
                 ✨ Usar recomendado
               </button>
@@ -3669,9 +2998,7 @@ function BestXI({
                 type="button"
                 className="xi-secondary-button"
                 onClick={() =>
-                  setEditing(
-                    false
-                  )
+                  setEditing(false)
                 }
               >
                 Cancelar edición
@@ -3680,43 +3007,25 @@ function BestXI({
           )}
         </div>
 
-        <div className="xi-specials xi-specials-sync">
+        <div className="xi-specials">
           <div>
-            <span>
-              👑 Capitán
-            </span>
-
+            <span>👑 Capitán</span>
             <strong>
               {currentCaptain?.name ||
-                "Sin capitán"}
+                bestXI?.captain?.name ||
+                "-"}
             </strong>
           </div>
 
           <div>
-            <span>
-              ⚽ Ariete
-            </span>
-
-            <strong>
-              {strikerEnabled
-                ? currentStriker?.name ||
-                  "Sin ariete"
-                : "Desactivado"}
-            </strong>
-          </div>
-
-          <div>
-            <span>
-              🏷 En venta
-            </span>
-
+            <span>🏷 No disponibles</span>
             <strong>
               {
-                fullSquad.filter(
+                (squad || []).filter(
                   (player) =>
                     player.isForSale
                 ).length
-              } jugador(es)
+              } en venta
             </strong>
           </div>
         </div>
@@ -3724,8 +3033,8 @@ function BestXI({
 
       {editing && (
         <>
-          <section className="lineup-editor-controls lineup-editor-controls-sync">
-            <div className="formation-editor-block">
+          <section className="lineup-editor-controls">
+            <div>
               <span className="section-label">
                 FORMACIÓN
               </span>
@@ -3735,9 +3044,7 @@ function BestXI({
                   (item) => (
                     <button
                       type="button"
-                      key={
-                        item.name
-                      }
+                      key={item.name}
                       className={
                         item.name ===
                         formation
@@ -3757,139 +3064,59 @@ function BestXI({
               </div>
             </div>
 
-            <div className="lineup-role-selectors">
-              <label className="lineup-captain-select">
-                <span>
-                  Capitán
-                </span>
+            <label className="lineup-captain-select">
+              <span>Capitán</span>
 
-                <select
-                  value={
-                    captainId
-                  }
-                  onChange={
-                    (event) =>
-                      setCaptainId(
-                        Number(
-                          event
-                            .target
-                            .value
-                        )
-                      )
-                  }
-                >
-                  <option value="0">
-                    Sin capitán
-                  </option>
-
-                  {selectedPlayers.map(
-                    (player) => (
-                      <option
-                        key={
-                          player.id
-                        }
-                        value={
-                          player.id
-                        }
-                      >
-                        {player.name}
-                      </option>
+              <select
+                value={captainId}
+                onChange={(event) =>
+                  setCaptainId(
+                    Number(
+                      event.target.value
                     )
-                  )}
-                </select>
-              </label>
+                  )
+                }
+              >
+                <option value="0">
+                  Sin capitán
+                </option>
 
-              {strikerEnabled && (
-                <label className="lineup-captain-select">
-                  <span>
-                    Ariete
-                  </span>
-
-                  <select
-                    value={
-                      strikerId
-                    }
-                    onChange={
-                      (event) =>
-                        setStrikerId(
-                          Number(
-                            event
-                              .target
-                              .value
-                          )
-                        )
-                    }
-                  >
-                    <option value="0">
-                      Sin ariete
+                {selectedPlayers.map(
+                  (player) => (
+                    <option
+                      key={player.id}
+                      value={player.id}
+                    >
+                      {player.name}
                     </option>
-
-                    {selectedPlayers
-                      .filter(
-                        (player) =>
-                          player.position ===
-                          "DL"
-                      )
-                      .map(
-                        (player) => (
-                          <option
-                            key={
-                              player.id
-                            }
-                            value={
-                              player.id
-                            }
-                          >
-                            {player.name}
-                          </option>
-                        )
-                      )}
-                  </select>
-                </label>
-              )}
-            </div>
+                  )
+                )}
+              </select>
+            </label>
           </section>
 
           <div className="lineup-position-summary">
-            {[
-              "AR",
-              "DF",
-              "MC",
-              "DL",
-            ].map(
+            {["AR", "DF", "MC", "DL"].map(
               (position) => (
                 <div
-                  key={
-                    position
-                  }
+                  key={position}
                   className={
-                    counts[
-                      position
-                    ] ===
+                    counts[position] ===
                     Number(
-                      config[
-                        position
-                      ] ||
-                      0
+                      config[position] || 0
                     )
                       ? "complete"
                       : ""
                   }
                 >
                   <Position
-                    position={
-                      position
-                    }
+                    position={position}
                   />
 
                   <span>
-                    {counts[
-                      position
-                    ] || 0}
+                    {counts[position] || 0}
                     /
-                    {config[
-                      position
-                    ]}
+                    {config[position]}
                   </span>
                 </div>
               )
@@ -3898,7 +3125,7 @@ function BestXI({
         </>
       )}
 
-      <section className="football-pitch football-pitch-synced">
+      <section className="football-pitch">
         <div className="pitch-border" />
         <div className="pitch-half-line" />
         <div className="pitch-center-circle" />
@@ -3910,54 +3137,30 @@ function BestXI({
 
         <PitchLine
           className="pitch-line-forwards"
-          players={
-            groups.DL
-          }
-          roles={
-            roleState
-          }
-          onPlayerDetails={
-            onPlayerDetails
-          }
+          players={groups.DL}
+          bestXI={pitchXI}
+          onPlayerDetails={onPlayerDetails}
         />
 
         <PitchLine
           className="pitch-line-midfield"
-          players={
-            groups.MC
-          }
-          roles={
-            roleState
-          }
-          onPlayerDetails={
-            onPlayerDetails
-          }
+          players={groups.MC}
+          bestXI={pitchXI}
+          onPlayerDetails={onPlayerDetails}
         />
 
         <PitchLine
           className="pitch-line-defense"
-          players={
-            groups.DF
-          }
-          roles={
-            roleState
-          }
-          onPlayerDetails={
-            onPlayerDetails
-          }
+          players={groups.DF}
+          bestXI={pitchXI}
+          onPlayerDetails={onPlayerDetails}
         />
 
         <PitchLine
           className="pitch-line-goalkeeper"
-          players={
-            groups.AR
-          }
-          roles={
-            roleState
-          }
-          onPlayerDetails={
-            onPlayerDetails
-          }
+          players={groups.AR}
+          bestXI={pitchXI}
+          onPlayerDetails={onPlayerDetails}
         />
       </section>
 
@@ -3974,9 +3177,7 @@ function BestXI({
               </h3>
 
               <p>
-                El orden recibido desde Biwenger se conserva. Los
-                jugadores en venta quedan bloqueados para una nueva
-                alineación.
+                Los jugadores que están a la venta aparecen bloqueados y no pueden entrar al XI.
               </p>
             </div>
 
@@ -3988,9 +3189,7 @@ function BestXI({
                 saving
               }
               onClick={() =>
-                setConfirmOpen(
-                  true
-                )
+                setConfirmOpen(true)
               }
             >
               {saving
@@ -3999,145 +3198,107 @@ function BestXI({
             </button>
           </div>
 
-          {[
-            "AR",
-            "DF",
-            "MC",
-            "DL",
-          ].map(
+          {["AR", "DF", "MC", "DL"].map(
             (position) => (
               <div
                 className="lineup-pool-position"
-                key={
-                  position
-                }
+                key={position}
               >
                 <div className="lineup-pool-position-title">
-                  <Position
-                    position={
-                      position
-                    }
-                  />
+                  <Position position={position} />
 
                   <strong>
-                    {position ===
-                    "AR"
+                    {position === "AR"
                       ? "Porteros"
-                      : position ===
-                          "DF"
+                      : position === "DF"
                         ? "Defensas"
-                        : position ===
-                            "MC"
+                        : position === "MC"
                           ? "Centrocampistas"
                           : "Delanteros"}
                   </strong>
 
                   <span>
-                    {counts[
-                      position
-                    ] || 0}
+                    {counts[position] || 0}
                     /
-                    {config[
-                      position
-                    ]}
+                    {config[position]}
                   </span>
                 </div>
 
                 <div className="lineup-player-options">
-                  {fullSquad
+                  {(squad || [])
                     .filter(
                       (player) =>
                         player.position ===
                         position
                     )
-                    .map(
-                      (player) => {
-                        const selected =
-                          selectedIds.includes(
-                            Number(
-                              player.id
-                            )
-                          );
-
-                        const full =
-                          (
-                            counts[
-                              position
-                            ] ||
-                            0
-                          ) >=
-                          Number(
-                            config[
-                              position
-                            ] ||
-                            0
-                          );
-
-                        const disabled =
-                          player.isForSale ||
-                          (
-                            !selected &&
-                            full
-                          );
-
-                        return (
-                          <button
-                            type="button"
-                            key={
-                              player.id
-                            }
-                            className={`lineup-player-option ${
-                              selected
-                                ? "selected"
-                                : ""
-                            } ${
-                              player.isForSale
-                                ? "for-sale"
-                                : ""
-                            }`}
-                            disabled={
-                              disabled
-                            }
-                            onClick={() =>
-                              togglePlayer(
-                                player
-                              )
-                            }
-                          >
-                            <PlayerPhoto
-                              player={
-                                player
-                              }
-                              size="chip"
-                            />
-
-                            <span>
-                              <strong>
-                                {player.name}
-                              </strong>
-
-                              <small>
-                                {player.teamName}
-                              </small>
-                            </span>
-
-                            {player.isForSale ? (
-                              <b className="lineup-option-status sale">
-                                EN VENTA
-                              </b>
-                            ) : selected ? (
-                              <b className="lineup-option-status selected">
-                                ✓ TITULAR
-                              </b>
-                            ) : (
-                              <b className="lineup-option-status add">
-                                +
-                              </b>
-                            )}
-                          </button>
+                    .map((player) => {
+                      const selected =
+                        selectedIds.includes(
+                          Number(player.id)
                         );
-                      }
-                    )}
+
+                      const full =
+                        (counts[position] || 0) >=
+                        Number(
+                          config[position] || 0
+                        );
+
+                      const disabled =
+                        player.isForSale ||
+                        (
+                          !selected &&
+                          full
+                        );
+
+                      return (
+                        <button
+                          type="button"
+                          key={player.id}
+                          className={`lineup-player-option ${
+                            selected
+                              ? "selected"
+                              : ""
+                          } ${
+                            player.isForSale
+                              ? "for-sale"
+                              : ""
+                          }`}
+                          disabled={disabled}
+                          onClick={() =>
+                            togglePlayer(player)
+                          }
+                        >
+                          <PlayerPhoto
+                            player={player}
+                            size="chip"
+                          />
+
+                          <span>
+                            <strong>
+                              {player.name}
+                            </strong>
+
+                            <small>
+                              {player.teamName}
+                            </small>
+                          </span>
+
+                          {player.isForSale ? (
+                            <b className="lineup-option-status sale">
+                              EN VENTA
+                            </b>
+                          ) : selected ? (
+                            <b className="lineup-option-status selected">
+                              ✓ TITULAR
+                            </b>
+                          ) : (
+                            <b className="lineup-option-status add">
+                              +
+                            </b>
+                          )}
+                        </button>
+                      );
+                    })}
                 </div>
               </div>
             )
@@ -4145,63 +3306,40 @@ function BestXI({
 
           {!valid && (
             <div className="lineup-validation-message">
-              Completa exactamente los puestos de la formación {formation}. Los jugadores en venta no pueden guardarse en el nuevo XI.
+              Completa exactamente los puestos requeridos por la formación {formation} para poder guardar.
             </div>
           )}
         </section>
       )}
 
       {!editing && (
-        <p className="read-only-note lineup-sync-note">
-          <strong>
-            Sincronizado con Biwenger:
-          </strong>{" "}
-          la formación, el orden de los titulares, el capitán y el
-          ariete de esta vista proceden de tu alineación guardada.
-          El botón “Usar recomendado” solo actúa cuando decides editar.
+        <p className="read-only-note">
+          El XI automático excluye a cualquier jugador que tengas puesto a la venta. Pulsa “Editar mi XI” para cambiar titulares y guardar la alineación real en Biwenger.
         </p>
       )}
 
       <LineupConfirmModal
-        open={
-          confirmOpen
-        }
-        formation={
-          formation
-        }
-        players={
-          selectedPlayers
-        }
-        captain={
-          currentCaptain
-        }
-        striker={
-          currentStriker
-        }
-        loading={
-          saving
-        }
-        error={
-          saveError
-        }
+        open={confirmOpen}
+        formation={formation}
+        players={selectedPlayers}
+        captain={currentCaptain}
+        loading={saving}
+        error={saveError}
         onClose={() =>
-          setConfirmOpen(
-            false
-          )
+          setConfirmOpen(false)
         }
         onConfirm={async () => {
           const ids =
             orderedLineupIds(
               selectedIds,
-              fullSquad
+              availableSquad
             );
 
           const success =
             await onSaveLineup({
               formation,
 
-              playersID:
-                ids,
+              playersID: ids,
 
               reservesID:
                 savedLineup
@@ -4213,24 +3351,11 @@ function BestXI({
                   captainId ||
                   0
                 ),
-
-              striker:
-                strikerEnabled
-                  ? Number(
-                      strikerId ||
-                      0
-                    )
-                  : 0,
             });
 
           if (success) {
-            setConfirmOpen(
-              false
-            );
-
-            setEditing(
-              false
-            );
+            setConfirmOpen(false);
+            setEditing(false);
           }
         }}
       />
@@ -4241,86 +3366,59 @@ function BestXI({
 function PitchLine({
   players,
   className,
-  roles,
+  bestXI,
   onPlayerDetails,
 }) {
   return (
     <div
       className={`pitch-line ${className}`}
     >
-      {players.map(
-        (player) => {
-          const isCaptain =
-            Number(
-              roles
-                ?.captain
-                ?.id ||
-              0
-            ) ===
-            Number(
-              player.id
-            );
+      {players.map((player) => {
+        const isCaptain =
+          Number(bestXI.captain?.id) ===
+          Number(player.id);
 
-          const isStriker =
-            Number(
-              roles
-                ?.striker
-                ?.id ||
-              0
-            ) ===
-            Number(
-              player.id
-            );
+        const isStriker =
+          Number(bestXI.striker?.id) ===
+          Number(player.id);
 
-          return (
-            <button
-              className="pitch-player"
-              key={
-                player.id
-              }
-              onClick={() =>
-                onPlayerDetails(
-                  player
-                )
-              }
-            >
-              <div className="pitch-player-photo">
-                <PlayerPhoto
-                  player={
-                    player
-                  }
-                  size="pitch"
-                />
+        return (
+          <button
+            className="pitch-player"
+            key={player.id}
+            onClick={() =>
+              onPlayerDetails(player)
+            }
+          >
+            <div className="pitch-player-photo">
+              <PlayerPhoto
+                player={player}
+                size="pitch"
+              />
 
-                {isCaptain && (
-                  <span className="pitch-role pitch-role-captain">
-                    C
-                  </span>
-                )}
+              {isCaptain && (
+                <span className="pitch-role pitch-role-captain">
+                  C
+                </span>
+              )}
 
-                {isStriker && (
-                  <span className="pitch-role pitch-role-striker">
-                    9
-                  </span>
-                )}
-              </div>
+              {isStriker && (
+                <span className="pitch-role pitch-role-striker">
+                  9
+                </span>
+              )}
+            </div>
 
-              <strong>
-                {player.name}
-              </strong>
+            <strong>{player.name}</strong>
 
-              <span>
-                {Number(
-                  player.projectedPoints ||
-                  0
-                ).toFixed(
-                  1
-                )} pts
-              </span>
-            </button>
-          );
-        }
-      )}
+            <span>
+              {Number(
+                player.projectedPoints || 0
+              ).toFixed(1)} pts
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -6165,7 +5263,6 @@ const saveLineup =
       playersID,
       reservesID,
       captain,
-      striker,
     }) => {
       if (
         lineupSaving
@@ -6195,7 +5292,6 @@ const saveLineup =
                   playersID,
                   reservesID,
                   captain,
-                  striker,
                 }),
             }
           );
@@ -6480,7 +5576,6 @@ const handleManualRefresh =
           bestXI={data?.bestXI}
           squad={data?.squad || []}
           savedLineup={data?.lineup}
-          lineupSettings={data?.league?.settings}
           onPlayerDetails={setSelectedXIPlayer}
           onSaveLineup={saveLineup}
           saving={lineupSaving}

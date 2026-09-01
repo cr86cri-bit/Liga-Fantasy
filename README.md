@@ -310,30 +310,3 @@ Las escrituras siguen sin reintentos automáticos.
 
 Se aumentó el tamaño de textos en las métricas, pestañas, tarjetas de jugadores,
 mercado, modales, panel de protección y editor de alineación.
-
-## Sincronización exacta de alineación con Biwenger
-
-La vista de Mejor XI ya no inventa capitán ni ariete cuando existe una
-alineación guardada.
-
-Al entrar a la pestaña se consulta:
-
-`GET /api/v2/user?fields=lineup(date,type,captain,striker,playersID,reservesID)`
-
-y la vista utiliza como fuente de verdad:
-
-- `type`: formación real.
-- `playersID`: los 11 titulares en el orden guardado por Biwenger.
-- `captain`: capitán real; `0/null` significa sin capitán.
-- `striker`: ariete real; `0/null` significa sin ariete.
-- `reservesID`: suplentes.
-
-El orden `playersID` se conserva al construir cada línea del campo, evitando
-que el algoritmo de recomendación o el orden de la plantilla cambien
-horizontalmente a los jugadores.
-
-La recomendación automática queda separada: solo se aplica si el usuario entra
-en **Editar mi XI** y pulsa **Usar recomendado**.
-
-El guardado también acepta `striker` y sigue usando confirmación obligatoria,
-cola anti-rate-limit y una única escritura sin reintentos automáticos.
