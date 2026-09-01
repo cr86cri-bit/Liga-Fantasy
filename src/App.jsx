@@ -15,6 +15,9 @@ const money = new Intl.NumberFormat("es-ES", {
 const MARKET_SNAPSHOT_KEY =
   "liga-fantasy-market-snapshot-v2";
 
+const SOFASCORE_PROFILE_CACHE_KEY =
+  "liga-fantasy-sofascore-profiles-v1";
+
 function formatMoney(value) {
   return money.format(Number(value || 0));
 }
@@ -413,6 +416,352 @@ function SellerBadge({ player }) {
   );
 }
 
+function SofaScoreProfileButton({
+  player,
+}) {
+  const [
+    state,
+    setState,
+  ] = useState({
+    status: "loading",
+    profile: null,
+    fallbackUrl: null,
+  });
+
+  useEffect(() => {
+    if (!player?.name) {
+      return undefined;
+    }
+
+    const controller =
+      new AbortController();
+
+    const cacheKey =
+      String(
+        player.id ||
+          `${player.name}|${player.teamName}`
+      );
+
+    const load =
+      async () => {
+        try {
+          const local =
+            leerCacheSofaScore(
+              cacheKey
+            );
+
+          if (local?.profile?.url) {
+            setState({
+              status: "ready",
+              profile:
+                local.profile,
+              fallbackUrl:
+                local.fallbackUrl ||
+                null,
+            });
+
+            return;
+          }
+
+          setState({
+            status: "loading",
+            profile: null,
+            fallbackUrl:
+              local?.fallbackUrl ||
+              null,
+          });
+
+          const params =
+            new URLSearchParams({
+              name:
+                player.name,
+
+              team:
+                player.teamName ||
+                "",
+            });
+
+          const response =
+            await fetch(
+              `/api/sofascore/player?${params.toString()}`,
+              {
+                signal:
+                  controller.signal,
+              }
+            );
+
+          const body =
+            await response.json();
+
+          if (
+            !response.ok ||
+            !body?.ok
+          ) {
+            throw new Error(
+              body?.message ||
+                "No se pudo buscar en SofaScore."
+            );
+          }
+
+          const result =
+            body?.data || {};
+
+          const next =
+            result?.found &&
+            result?.profile?.url
+              ? {
+                  status:
+                    "ready",
+
+                  profile:
+                    result.profile,
+
+                  fallbackUrl:
+                    result.fallbackUrl ||
+                    null,
+                }
+              : {
+                  status:
+                    "not-found",
+
+                  profile:
+                    null,
+
+                  fallbackUrl:
+                    result.fallbackUrl ||
+                    null,
+                };
+
+          guardarCacheSofaScore(
+            cacheKey,
+            next
+          );
+
+          setState(next);
+        } catch (error) {
+          if (
+            error?.name ===
+            "AbortError"
+          ) {
+            return;
+          }
+
+          setState({
+            status: "error",
+            profile: null,
+            fallbackUrl:
+              crearBusquedaSofaScoreFallback(
+                player
+              ),
+          });
+        }
+      };
+
+    load();
+
+    return () =>
+      controller.abort();
+  }, [
+    player?.id,
+    player?.name,
+    player?.teamName,
+  ]);
+
+  const isReady =
+    state.status ===
+      "ready" &&
+    state.profile?.url;
+
+  const canFallback =
+    !isReady &&
+    Boolean(
+      state.fallbackUrl
+    );
+
+  const handleOpen = () => {
+    const url =
+      isReady
+        ? state.profile.url
+        : state.fallbackUrl;
+
+    if (!url) {
+      return;
+    }
+
+    window.open(
+      url,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  return (
+    <button
+      type="button"
+      className={`sofascore-profile-button sofascore-profile-${state.status}`}
+      onClick={handleOpen}
+      disabled={
+        state.status ===
+          "loading" ||
+        (!isReady &&
+          !canFallback)
+      }
+      title={
+        isReady
+          ? "Abrir perfil del jugador en SofaScore"
+          : "Buscar el perfil del jugador"
+      }
+    >
+      <span className="sofascore-logo">
+        S
+      </span>
+
+      <span className="sofascore-button-copy">
+        <small>
+          SOFASCORE
+        </small>
+
+        <strong>
+          {state.status ===
+          "loading"
+            ? "Buscando perfil..."
+            : isReady
+              ? "Ver perfil"
+              : "Buscar perfil"}
+        </strong>
+
+        <em>
+          {isReady
+            ? state.profile
+                ?.teamName ||
+              "Perfil encontrado"
+            : state.status ===
+                "error"
+              ? "Búsqueda alternativa"
+              : state.status ===
+                  "not-found"
+                ? "Coincidencia no confirmada"
+                : "Datos y estadísticas"}
+        </em>
+      </span>
+
+      <span className="sofascore-arrow">
+        ↗
+      </span>
+    </button>
+  );
+}
+
+function leerCacheSofaScore(
+  key
+) {
+  try {
+    const raw =
+      localStorage.getItem(
+        SOFASCORE_PROFILE_CACHE_KEY
+      );
+
+    if (!raw) {
+      return null;
+    }
+
+    const parsed =
+      JSON.parse(raw);
+
+    const item =
+      parsed?.[key];
+
+    if (!item) {
+      return null;
+    }
+
+    /*
+     * Perfil encontrado: cache 7 días.
+     * Fallback/no encontrado: cache 1 hora.
+     */
+    const ttl =
+      item?.profile?.url
+        ? 7 *
+          24 *
+          60 *
+          60 *
+          1000
+        : 60 *
+          60 *
+          1000;
+
+    if (
+      Date.now() -
+        Number(
+          item.savedAt || 0
+        ) >
+      ttl
+    ) {
+      return null;
+    }
+
+    return item;
+  } catch {
+    return null;
+  }
+}
+
+function guardarCacheSofaScore(
+  key,
+  value
+) {
+  try {
+    const raw =
+      localStorage.getItem(
+        SOFASCORE_PROFILE_CACHE_KEY
+      );
+
+    const parsed =
+      raw
+        ? JSON.parse(raw)
+        : {};
+
+    parsed[key] = {
+      ...value,
+      savedAt:
+        Date.now(),
+    };
+
+    localStorage.setItem(
+      SOFASCORE_PROFILE_CACHE_KEY,
+      JSON.stringify(parsed)
+    );
+  } catch {
+    /*
+     * Si el navegador bloquea localStorage,
+     * el enlace sigue funcionando; simplemente
+     * se resolverá otra vez la próxima vez.
+     */
+  }
+}
+
+function crearBusquedaSofaScoreFallback(
+  player
+) {
+  const query =
+    [
+      "site:sofascore.com/football/player",
+      `"${player?.name || ""}"`,
+      player?.teamName
+        ? `"${player.teamName}"`
+        : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+  return (
+    "https://www.google.com/search?q=" +
+    encodeURIComponent(
+      query
+    )
+  );
+}
+
 function PlayerDetailModal({ player, onClose, context = "team", now }) {
   if (!player) return null;
 
@@ -447,7 +796,14 @@ function PlayerDetailModal({ player, onClose, context = "team", now }) {
           </div>
         </div>
 
-        <AnalysisScore analysis={player.analysis} compact />
+        <SofaScoreProfileButton
+          player={player}
+        />
+
+        <AnalysisScore
+          analysis={player.analysis}
+          compact
+        />
       </div>
 
       {context === "market" && (

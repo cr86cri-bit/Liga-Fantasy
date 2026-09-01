@@ -1517,6 +1517,179 @@ a {
 }
 
 /* =========================================================
+   SOFASCORE EN DETALLE DE JUGADOR
+   ========================================================= */
+
+.sofascore-profile-button {
+  display: grid;
+  grid-template-columns:
+    40px
+    minmax(105px, 1fr)
+    20px;
+  align-items: center;
+  gap: 9px;
+
+  min-width: 205px;
+  max-width: 245px;
+  min-height: 64px;
+  margin-inline: auto;
+  padding: 9px 10px;
+
+  border: 1px solid #343f61;
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(37, 42, 67, 0.96),
+      rgba(17, 24, 37, 0.98)
+    );
+
+  color: #fff;
+  cursor: pointer;
+
+  text-align: left;
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.sofascore-profile-button:hover:not(:disabled) {
+  border-color: #6875e8;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(54, 60, 96, 0.98),
+      rgba(23, 30, 48, 0.99)
+    );
+
+  transform:
+    translateY(-1px);
+}
+
+.sofascore-profile-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.sofascore-logo {
+  display: grid;
+  place-items: center;
+
+  width: 40px;
+  height: 40px;
+
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #827dff,
+      #5e66f0
+    );
+
+  color: #fff;
+
+  font-size: 20px;
+  font-weight: 1000;
+  font-style: italic;
+
+  box-shadow:
+    0 8px 20px
+      rgba(89, 91, 231, 0.22);
+}
+
+.sofascore-button-copy {
+  display: block;
+  min-width: 0;
+}
+
+.sofascore-button-copy small,
+.sofascore-button-copy strong,
+.sofascore-button-copy em {
+  display: block;
+}
+
+.sofascore-button-copy small {
+  margin-bottom: 2px;
+
+  color: #8e94b5;
+
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+}
+
+.sofascore-button-copy strong {
+  overflow: hidden;
+
+  color: #f7f8ff;
+
+  font-size: 11px;
+  font-weight: 900;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sofascore-button-copy em {
+  margin-top: 2px;
+  overflow: hidden;
+
+  color: #858cac;
+
+  font-size: 8px;
+  font-style: normal;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sofascore-arrow {
+  color: #9ea5ff;
+  font-size: 16px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.sofascore-profile-ready {
+  border-color:
+    rgba(
+      118,
+      122,
+      255,
+      0.55
+    );
+}
+
+.sofascore-profile-not-found,
+.sofascore-profile-error {
+  border-color:
+    rgba(
+      211,
+      167,
+      66,
+      0.35
+    );
+}
+
+.sofascore-profile-not-found
+  .sofascore-logo,
+.sofascore-profile-error
+  .sofascore-logo {
+  background:
+    linear-gradient(
+      145deg,
+      #9a7333,
+      #72551f
+    );
+}
+
+/* =========================================================
    RIVAL MODAL
    ========================================================= */
 
@@ -2450,5 +2623,50 @@ footer {
   .toast-stack {
     top: 8px;
     right: 8px;
+  }
+}
+
+
+@media (max-width: 760px) {
+  .player-modal-hero {
+    display: grid;
+    grid-template-columns:
+      1fr
+      auto;
+    gap: 14px;
+  }
+
+  .player-modal-identity {
+    grid-column: 1 / -1;
+  }
+
+  .sofascore-profile-button {
+    grid-column: 1;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .player-modal-hero
+    > .score-pill {
+    grid-column: 2;
+    align-self: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .player-modal-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .sofascore-profile-button,
+  .player-modal-hero
+    > .score-pill {
+    grid-column: 1;
+  }
+
+  .player-modal-hero
+    > .score-pill {
+    justify-self: start;
   }
 }

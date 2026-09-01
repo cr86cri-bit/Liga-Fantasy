@@ -33,3 +33,22 @@ Las notificaciones del navegador funcionan en `localhost` y en sitios HTTPS cuan
 ## Seguridad
 
 `.env` continúa ignorado por Git. No subas tu token a GitHub.
+
+## Perfil de SofaScore
+
+En el detalle de cada jugador aparece ahora un bloque **SofaScore** entre
+la identidad del jugador y la nota Fantasy.
+
+Al abrir el modal:
+
+1. El backend busca el jugador por **nombre + equipo**.
+2. Se priorizan coincidencias exactas para evitar homónimos.
+3. Si se encuentra una coincidencia segura, **Ver perfil** abre directamente
+   el perfil del futbolista en SofaScore.
+4. El resultado se guarda temporalmente en caché para no repetir búsquedas.
+5. Si SofaScore no permite resolver el perfil automáticamente o existe una
+   coincidencia ambigua, el botón pasa a **Buscar perfil** como alternativa.
+
+La búsqueda de SofaScore usa endpoints web no documentados públicamente por
+SofaScore, por lo que pueden cambiar en el futuro. El resto del dashboard no
+depende de esta integración y seguirá funcionando aunque SofaScore no responda.

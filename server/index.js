@@ -7,10 +7,17 @@ import {
   BiwengerClient,
 } from "./biwenger.js";
 
+import {
+  SofaScoreClient,
+} from "./sofascore/SofaScoreClient.js";
+
 const app = express();
 
 const PORT =
   Number(process.env.PORT || 3001);
+
+const sofaScoreClient =
+  new SofaScoreClient();
 
 app.use(cors());
 app.use(express.json());
@@ -68,6 +75,59 @@ app.get("/api/connection", async (_req, res) => {
     });
   }
 });
+
+app.get(
+  "/api/sofascore/player",
+  async (req, res) => {
+    try {
+      const name =
+        String(
+          req.query?.name || ""
+        ).trim();
+
+      const team =
+        String(
+          req.query?.team || ""
+        ).trim();
+
+      if (!name) {
+        return res
+          .status(400)
+          .json({
+            ok: false,
+            message:
+              "Debes enviar el nombre del jugador.",
+          });
+      }
+
+      const data =
+        await sofaScoreClient
+          .buscarJugador({
+            name,
+            team,
+          });
+
+      return res.json({
+        ok: true,
+        data,
+      });
+    } catch (error) {
+      console.error(
+        "[SofaScore]",
+        error
+      );
+
+      return res
+        .status(502)
+        .json({
+          ok: false,
+          message:
+            error?.message ||
+            "No se pudo resolver el perfil de SofaScore.",
+        });
+    }
+  }
+);
 
 app.get("/api/dashboard", async (_req, res) => {
   try {
