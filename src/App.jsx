@@ -15,6 +15,9 @@ const money = new Intl.NumberFormat("es-ES", {
 const MARKET_SNAPSHOT_KEY =
   "liga-fantasy-market-snapshot-v2";
 
+const NOTIFICATION_HISTORY_KEY =
+  "liga-fantasy-notification-history-v1";
+
 const SOFASCORE_PROFILE_CACHE_KEY =
   "liga-fantasy-sports-sources-v1";
 
@@ -324,12 +327,63 @@ function DetailButton({ onClick, label = "Ver detalles" }) {
   );
 }
 
+let modalScrollLockCount = 0;
+let modalOriginalBodyOverflow = "";
+let modalOriginalHtmlOverflow = "";
+let modalOriginalBodyPaddingRight = "";
+
+function lockPageScroll() {
+  if (typeof document === "undefined") return;
+
+  if (modalScrollLockCount === 0) {
+    modalOriginalBodyOverflow = document.body.style.overflow;
+    modalOriginalHtmlOverflow = document.documentElement.style.overflow;
+    modalOriginalBodyPaddingRight = document.body.style.paddingRight;
+
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth;
+
+    if (scrollbarWidth > 0) {
+      const currentPadding =
+        Number.parseFloat(
+          window.getComputedStyle(document.body).paddingRight
+        ) || 0;
+
+      document.body.style.paddingRight =
+        `${currentPadding + scrollbarWidth}px`;
+    }
+  }
+
+  modalScrollLockCount += 1;
+  document.body.style.overflow = "hidden";
+  document.documentElement.style.overflow = "hidden";
+}
+
+function unlockPageScroll() {
+  if (typeof document === "undefined") return;
+
+  modalScrollLockCount = Math.max(0, modalScrollLockCount - 1);
+
+  if (modalScrollLockCount !== 0) return;
+
+  document.body.style.overflow = modalOriginalBodyOverflow;
+  document.documentElement.style.overflow = modalOriginalHtmlOverflow;
+  document.body.style.paddingRight = modalOriginalBodyPaddingRight;
+}
+
 function Modal({ open, onClose, title, subtitle, children, wide = false }) {
   useEffect(() => {
     if (!open) return undefined;
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    lockPageScroll();
+
+    return () => {
+      unlockPageScroll();
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
 
     const onKeyDown = (event) => {
       if (event.key === "Escape") onClose();
@@ -338,7 +392,6 @@ function Modal({ open, onClose, title, subtitle, children, wide = false }) {
     window.addEventListener("keydown", onKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [open, onClose]);
@@ -1277,9 +1330,22 @@ function MarketChip({ player, onDetails, now }) {
   );
 }
 
-function MarketStatusBar({ meta, market, now, notificationPermission, onEnableNotifications }) {
-  const systemCount = market.filter((player) => player.sellerType === "market").length;
-  const usersCount = market.filter((player) => player.sellerType === "user").length;
+function MarketStatusBar({
+  meta,
+  market,
+  now,
+  notificationPermission,
+  onEnableNotifications,
+  historyCount,
+  onOpenHistory,
+}) {
+  const systemCount = market.filter(
+    (player) => player.sellerType === "market"
+  ).length;
+
+  const usersCount = market.filter(
+    (player) => player.sellerType === "user"
+  ).length;
 
   const fallbackNext = useMemo(() => {
     const systemDeadlines = market
@@ -1291,7 +1357,10 @@ function MarketStatusBar({ meta, market, now, notificationPermission, onEnableNo
       .map((player) => toMilliseconds(player.until))
       .filter((value) => value && value > now);
 
-    const values = systemDeadlines.length ? systemDeadlines : allDeadlines;
+    const values = systemDeadlines.length
+      ? systemDeadlines
+      : allDeadlines;
+
     return values.length ? Math.min(...values) : null;
   }, [market, now]);
 
@@ -1325,28 +1394,39 @@ function MarketStatusBar({ meta, market, now, notificationPermission, onEnableNo
         </div>
       </div>
 
-      <button
-        className={`notification-button permission-${notificationPermission}`}
-        onClick={onEnableNotifications}
-      >
-        <span>🔔</span>
-        <div>
-          <strong>
-            {notificationPermission === "granted"
-              ? "Notificaciones activas"
-              : notificationPermission === "denied"
-                ? "Notificaciones bloqueadas"
-                : notificationPermission === "unsupported"
-                  ? "Solo avisos en pantalla"
-                  : "Activar notificaciones"}
-          </strong>
-          <small>
-            {notificationPermission === "granted"
-              ? "Te avisaremos cuando detectemos cambios."
-              : "Los avisos internos siempre están activos."}
-          </small>
-        </div>
-      </button>
+      <div className="notification-actions">
+        <button
+          className={`notification-button permission-${notificationPermission}`}
+          onClick={onEnableNotifications}
+        >
+          <span>🔔</span>
+          <div>
+            <strong>
+              {notificationPermission === "granted"
+                ? "Notificaciones activas"
+                : notificationPermission === "denied"
+                  ? "Notificaciones bloqueadas"
+                  : notificationPermission === "unsupported"
+                    ? "Solo avisos en pantalla"
+                    : "Activar notificaciones"}
+            </strong>
+            <small>
+              {notificationPermission === "granted"
+                ? "Te avisaremos cuando detectemos cambios."
+                : "Los avisos internos siempre están activos."}
+            </small>
+          </div>
+        </button>
+
+        <button className="notification-history-button" onClick={onOpenHistory}>
+          <span>🕘</span>
+          <div>
+            <strong>Historial de avisos</strong>
+            <small>Ver cambios detectados</small>
+          </div>
+          <b>{historyCount}</b>
+        </button>
+      </div>
     </section>
   );
 }
@@ -1747,9 +1827,12 @@ function createMarketSnapshot(market) {
       id: Number(player.id),
       name: player.name,
       ownerId: Number(player.ownerId || 0),
-      ownerName: player.ownerName,
-      sellerType: player.sellerType || (player.ownerId ? "user" : "market"),
-      salePrice: Number(player.salePrice || player.marketIntelligence?.listedPrice || 0),
+      ownerName: player.ownerName || "Mercado Biwenger",
+      sellerType:
+        player.sellerType || (player.ownerId ? "user" : "market"),
+      salePrice: Number(
+        player.salePrice || player.marketIntelligence?.listedPrice || 0
+      ),
       until: Number(player.until || 0) || null,
     };
   }
@@ -1757,65 +1840,267 @@ function createMarketSnapshot(market) {
   return snapshot;
 }
 
+function marketSellerName(item) {
+  if (item?.sellerType === "market") return "Mercado Biwenger";
+  return item?.ownerName || "Otro participante";
+}
+
+function marketEventIcon(eventType) {
+  return {
+    added: "➕",
+    removed: "↩",
+    price: "💰",
+    deadline: "⏱",
+    refresh: "🔄",
+  }[eventType] || "🔔";
+}
+
 function compareMarketSnapshots(previous, next) {
   const previousKeys = Object.keys(previous || {});
   const nextKeys = Object.keys(next || {});
 
-  if (!previousKeys.length) return null;
+  if (!previousKeys.length) return [];
 
   const previousSet = new Set(previousKeys);
   const nextSet = new Set(nextKeys);
+  const events = [];
 
-  const added = nextKeys.filter((key) => !previousSet.has(key));
-  const removed = previousKeys.filter((key) => !nextSet.has(key));
+  for (const key of nextKeys) {
+    if (previousSet.has(key)) continue;
 
-  let priceChanges = 0;
-  let timeChanges = 0;
+    const item = next[key];
+    const seller = marketSellerName(item);
+
+    events.push({
+      eventType: "added",
+      type: "market",
+      icon: marketEventIcon("added"),
+      playerId: item?.id,
+      playerName: item?.name,
+      actorName: seller,
+      title: `${item?.name || "Un jugador"} entró al mercado`,
+      message:
+        `${seller} puso a ${item?.name || "este jugador"} en venta por ` +
+        `${formatMoney(item?.salePrice)}.`,
+    });
+  }
+
+  for (const key of previousKeys) {
+    if (nextSet.has(key)) continue;
+
+    const item = previous[key];
+    const seller = marketSellerName(item);
+    const isSystem = item?.sellerType === "market";
+
+    events.push({
+      eventType: "removed",
+      type: "market",
+      icon: marketEventIcon("removed"),
+      playerId: item?.id,
+      playerName: item?.name,
+      actorName: seller,
+      title: `${item?.name || "Un jugador"} salió del mercado`,
+      message: isSystem
+        ? `La oferta de ${item?.name || "este jugador"} del Mercado Biwenger terminó o fue retirada. Precio anterior: ${formatMoney(item?.salePrice)}.`
+        : `${item?.name || "Este jugador"} ya no está disponible. Último oferente: ${seller}. Precio anterior: ${formatMoney(item?.salePrice)}.`,
+    });
+  }
 
   for (const key of nextKeys) {
     if (!previousSet.has(key)) continue;
 
-    if (Number(previous[key]?.salePrice) !== Number(next[key]?.salePrice)) {
-      priceChanges += 1;
+    const before = previous[key];
+    const after = next[key];
+    const seller = marketSellerName(after);
+
+    if (Number(before?.salePrice) !== Number(after?.salePrice)) {
+      events.push({
+        eventType: "price",
+        type: "market",
+        icon: marketEventIcon("price"),
+        playerId: after?.id,
+        playerName: after?.name,
+        actorName: seller,
+        title: `Cambió el precio de ${after?.name || "un jugador"}`,
+        message:
+          `${seller}: ${formatMoney(before?.salePrice)} → ` +
+          `${formatMoney(after?.salePrice)}.`,
+      });
     }
 
-    if (Number(previous[key]?.until || 0) !== Number(next[key]?.until || 0)) {
-      timeChanges += 1;
+    if (
+      Number(before?.until || 0) !==
+      Number(after?.until || 0)
+    ) {
+      events.push({
+        eventType: "deadline",
+        type: "market",
+        icon: marketEventIcon("deadline"),
+        playerId: after?.id,
+        playerName: after?.name,
+        actorName: seller,
+        title: `Se actualizó el tiempo de ${after?.name || "una oferta"}`,
+        message:
+          `${seller}. Nuevo vencimiento: ${formatDate(after?.until)}.`,
+      });
     }
   }
 
-  if (!added.length && !removed.length && !priceChanges && !timeChanges) {
-    return null;
+  return events;
+}
+
+function readNotificationHistory() {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = window.localStorage.getItem(NOTIFICATION_HISTORY_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
   }
+}
 
-  const parts = [];
-  if (added.length) parts.push(`${added.length} nueva${added.length === 1 ? " oferta" : "s ofertas"}`);
-  if (removed.length) parts.push(`${removed.length} retirada${removed.length === 1 ? "" : "s"}`);
-  if (priceChanges) parts.push(`${priceChanges} precio${priceChanges === 1 ? " modificado" : "s modificados"}`);
-  if (timeChanges) parts.push(`${timeChanges} vencimiento${timeChanges === 1 ? " actualizado" : "s actualizados"}`);
+function saveNotificationHistory(history) {
+  if (typeof window === "undefined") return;
 
-  const newNames = added
-    .slice(0, 3)
-    .map((key) => next[key]?.name)
-    .filter(Boolean);
+  try {
+    window.localStorage.setItem(
+      NOTIFICATION_HISTORY_KEY,
+      JSON.stringify(history)
+    );
+  } catch {
+    // localStorage es opcional.
+  }
+}
 
-  return {
-    title: "Mercado actualizado",
-    message: `${parts.join(" · ")}${newNames.length ? `. Nuevos: ${newNames.join(", ")}` : "."}`,
-  };
+function formatNotificationDate(value) {
+  if (!value) return "-";
+
+  return new Date(Number(value)).toLocaleString("es-BO", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 function Toasts({ items, onClose }) {
   return (
     <div className="toast-stack">
       {items.map((item) => (
-        <div className={`toast toast-${item.type || "info"}`} key={item.id}>
-          <div className="toast-icon">{item.type === "market" ? "🔔" : "ℹ️"}</div>
-          <div><strong>{item.title}</strong><p>{item.message}</p></div>
-          <button onClick={() => onClose(item.id)}>×</button>
-        </div>
+        <article className={`toast toast-${item.type || "info"}`} key={item.id}>
+          <div className="toast-icon">
+            {item.icon || (item.type === "market" ? "🔔" : "ℹ️")}
+          </div>
+
+          <div className="toast-content">
+            <span className="toast-kicker">
+              {item.eventType === "removed"
+                ? "SALIDA DEL MERCADO"
+                : item.eventType === "added"
+                  ? "NUEVA OFERTA"
+                  : item.eventType === "price"
+                    ? "CAMBIO DE PRECIO"
+                    : item.eventType === "deadline"
+                      ? "TIEMPO ACTUALIZADO"
+                      : "NOTIFICACIÓN"}
+            </span>
+
+            <strong>{item.title}</strong>
+            <p>{item.message}</p>
+
+            {(item.playerName || item.actorName) && (
+              <div className="toast-meta">
+                {item.playerName && <span>⚽ {item.playerName}</span>}
+                {item.actorName && <span>👤 {item.actorName}</span>}
+              </div>
+            )}
+          </div>
+
+          <button onClick={() => onClose(item.id)} aria-label="Cerrar aviso">
+            ×
+          </button>
+        </article>
       ))}
     </div>
+  );
+}
+
+function NotificationHistoryModal({
+  open,
+  items,
+  onClose,
+  onClear,
+}) {
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Historial de notificaciones"
+      subtitle="Cambios de mercado detectados por Liga Fantasy"
+      wide
+    >
+      <div className="notification-history-toolbar">
+        <div>
+          <span>Registros guardados</span>
+          <strong>{items.length}</strong>
+        </div>
+
+        {items.length > 0 && (
+          <button className="notification-history-clear" onClick={onClear}>
+            Limpiar historial
+          </button>
+        )}
+      </div>
+
+      {items.length ? (
+        <div className="notification-history-list">
+          {items.map((item) => (
+            <article
+              className={`notification-history-item event-${item.eventType || "info"}`}
+              key={item.id}
+            >
+              <div className="notification-history-icon">
+                {item.icon || marketEventIcon(item.eventType)}
+              </div>
+
+              <div className="notification-history-content">
+                <div className="notification-history-title-row">
+                  <strong>{item.title}</strong>
+                  <time>{formatNotificationDate(item.createdAt)}</time>
+                </div>
+
+                <p>{item.message}</p>
+
+                {(item.playerName || item.actorName) && (
+                  <div className="notification-history-meta">
+                    {item.playerName && (
+                      <span>
+                        Jugador: <b>{item.playerName}</b>
+                      </span>
+                    )}
+
+                    {item.actorName && (
+                      <span>
+                        Oferente: <b>{item.actorName}</b>
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state">
+          Todavía no hay notificaciones guardadas.
+        </div>
+      )}
+    </Modal>
   );
 }
 
@@ -1830,6 +2115,16 @@ export default function App() {
   const [error, setError] = useState("");
   const [now, setNow] = useState(Date.now());
   const [toasts, setToasts] = useState([]);
+
+  const [
+    notificationHistory,
+    setNotificationHistory,
+  ] = useState(() => readNotificationHistory());
+
+  const [
+    notificationHistoryOpen,
+    setNotificationHistoryOpen,
+  ] = useState(false);
 
   const [selectedTeamPlayer, setSelectedTeamPlayer] = useState(null);
   const [selectedMarketPlayer, setSelectedMarketPlayer] = useState(null);
@@ -1846,26 +2141,68 @@ export default function App() {
   const marketSnapshotRef = useRef(null);
   const marketDeadlineRefreshRef = useRef(null);
 
-  const removeToast = useCallback((id) => {
-    setToasts((current) => current.filter((item) => item.id !== id));
-  }, []);
+const removeToast = useCallback((id) => {
+  setToasts((current) =>
+    current.filter((item) => item.id !== id)
+  );
+}, []);
 
-  const pushToast = useCallback((title, message, type = "info") => {
-    const id = `${Date.now()}-${Math.random()}`;
+const clearNotificationHistory = useCallback(() => {
+  setNotificationHistory([]);
+
+  try {
+    window.localStorage.removeItem(NOTIFICATION_HISTORY_KEY);
+  } catch {
+    // localStorage opcional.
+  }
+}, []);
+
+const pushToast = useCallback(
+  (title, message, type = "info", meta = {}) => {
+    const item = {
+      id: `${Date.now()}-${Math.random()}`,
+      createdAt: Date.now(),
+      title,
+      message,
+      type,
+      icon: meta.icon || (type === "market" ? "🔔" : "ℹ️"),
+      eventType: meta.eventType || "info",
+      playerId: meta.playerId || null,
+      playerName: meta.playerName || null,
+      actorName: meta.actorName || null,
+    };
 
     setToasts((current) => [
-      ...current.slice(-3),
-      { id, title, message, type },
+      ...current.slice(-2),
+      item,
     ]);
 
-    window.setTimeout(() => {
-      setToasts((current) => current.filter((item) => item.id !== id));
-    }, 7000);
-  }, []);
+    setNotificationHistory((current) => {
+      const next = [item, ...current].slice(0, 120);
+      saveNotificationHistory(next);
+      return next;
+    });
 
-  const sendMarketNotification = useCallback(
-    (change) => {
-      pushToast(change.title, change.message, "market");
+    window.setTimeout(() => {
+      setToasts((current) =>
+        current.filter((currentItem) => currentItem.id !== item.id)
+      );
+    }, 12_000);
+
+    return item;
+  },
+  []
+);
+
+const sendMarketNotifications = useCallback(
+  (changes) => {
+    for (const change of changes || []) {
+      const item = pushToast(
+        change.title,
+        change.message,
+        "market",
+        change
+      );
 
       if (
         typeof window !== "undefined" &&
@@ -1875,15 +2212,19 @@ export default function App() {
         try {
           new window.Notification(change.title, {
             body: change.message,
-            tag: "liga-fantasy-market-update",
+            tag:
+              `liga-fantasy-${change.eventType || "market"}-` +
+              `${change.playerId || item.id}`,
+            renotify: true,
           });
         } catch {
-          // El aviso interno sigue funcionando aunque el navegador falle.
+          // El aviso interno y el historial siguen funcionando.
         }
       }
-    },
-    [pushToast]
-  );
+    }
+  },
+  [pushToast]
+);
 
   const loadData = useCallback(
     async ({ silent = false } = {}) => {
@@ -1910,9 +2251,9 @@ export default function App() {
           }
         }
 
-        const marketChange = previousSnapshot
+        const marketChanges = previousSnapshot
           ? compareMarketSnapshots(previousSnapshot, nextSnapshot)
-          : null;
+          : [];
 
         marketSnapshotRef.current = nextSnapshot;
 
@@ -1928,8 +2269,8 @@ export default function App() {
         setData(body.data);
         setNow(Date.now());
 
-        if (marketChange) {
-          sendMarketNotification(marketChange);
+        if (marketChanges.length) {
+          sendMarketNotifications(marketChanges);
         }
       } catch (err) {
         setError(err?.message || "Error desconocido.");
@@ -1938,7 +2279,7 @@ export default function App() {
         setRefreshing(false);
       }
     },
-    [sendMarketNotification]
+    [sendMarketNotifications]
   );
 
   useEffect(() => {
@@ -2262,6 +2603,8 @@ const filteredMarket =
             now={now}
             notificationPermission={notificationPermission}
             onEnableNotifications={enableNotifications}
+            historyCount={notificationHistory.length}
+            onOpenHistory={() => setNotificationHistoryOpen(true)}
           />
 
           <section className="market-list market-list-v2">
@@ -2303,6 +2646,14 @@ const filteredMarket =
         </span>
       </footer>
 
+
+
+<NotificationHistoryModal
+  open={notificationHistoryOpen}
+  items={notificationHistory}
+  onClose={() => setNotificationHistoryOpen(false)}
+  onClear={clearNotificationHistory}
+/>
 
 <MarketPositionFilterModal
   open={positionFilterOpen}

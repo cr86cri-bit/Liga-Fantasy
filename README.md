@@ -103,3 +103,28 @@ encontrar el perfil correcto sin inventar IDs.
 Esta versión no importa automáticamente estadísticas de esas páginas dentro
 de la nota Fantasy. Esa integración debe hacerse fuente por fuente porque no
 existe una API pública única y estable compartida por todas ellas.
+
+## Corrección de modales y nuevo sistema de notificaciones
+
+### Scroll corregido
+
+Se cambió el bloqueo de scroll de los modales por un sistema con contador de
+bloqueos. Esto permite abrir un modal dentro de otro —por ejemplo el detalle
+del jugador y luego Fuentes Deportivas— sin dejar la página principal con
+`overflow: hidden` después de cerrar.
+
+### Notificaciones más claras
+
+Los avisos internos ahora son grandes, centrados, duran 12 segundos y muestran
+el jugador y el oferente. Distinguen entradas, salidas, cambios de precio y
+cambios de tiempo.
+
+Cuando una oferta desaparece, el sistema muestra el **último oferente**. Con el
+snapshot disponible no siempre se puede diferenciar entre venta, expiración o
+retirada manual, por eso no se inventa esa causa.
+
+### Historial
+
+Mercado incorpora un botón **Historial de avisos**. Se guardan hasta 120
+notificaciones en `localStorage` y permanecen después de recargar la página.
+El historial se puede limpiar desde su modal.
