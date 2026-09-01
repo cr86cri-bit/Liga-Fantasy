@@ -14,7 +14,7 @@ export function obtenerProximoPartido(
   const team = teamsMap?.[normalizedTeamId];
   const game = team?.nextGames?.[0];
 
-  if (!team || !game) return  null;
+  if (!team || !game) return null;
 
   const homeId = Number(game?.home?.id || 0);
   const awayId = Number(game?.away?.id || 0);
