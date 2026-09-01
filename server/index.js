@@ -1,8 +1,7 @@
 import "dotenv/config";
 
-import express from "express";
-
 import cors from "cors";
+import express from "express";
 
 import {
   BiwengerClient,
@@ -10,222 +9,113 @@ import {
 
 const app = express();
 
-const PORT = Number(
-  process.env.PORT || 3001
-);
+const PORT =
+  Number(process.env.PORT || 3001);
 
 app.use(cors());
-
 app.use(express.json());
 
 let client = null;
 
-/*
-|--------------------------------------------------------------------------
-| CLIENTE
-|--------------------------------------------------------------------------
-*/
-
-function obtenerCliente() {
+function getClient() {
   if (!client) {
-    client =
-      new BiwengerClient({
-        token:
-          process.env
-            .BIWENGER_TOKEN,
-
-        version:
-          process.env
-            .BIWENGER_VERSION ||
-          "",
-
-        leagueName:
-          process.env
-            .BIWENGER_LEAGUE_NAME ||
-          "",
-
-        score:
-          process.env
-            .BIWENGER_SCORE ||
-          "5",
-      });
+    client = new BiwengerClient({
+      token:
+        process.env.BIWENGER_TOKEN,
+      version:
+        process.env.BIWENGER_VERSION ||
+        "",
+      leagueName:
+        process.env.BIWENGER_LEAGUE_NAME ||
+        "",
+      score:
+        process.env.BIWENGER_SCORE ||
+        "1",
+    });
   }
 
   return client;
 }
 
-/*
-|--------------------------------------------------------------------------
-| HEALTH
-|--------------------------------------------------------------------------
-*/
+app.get("/api/health", (_req, res) => {
+  res.json({
+    ok: true,
+    service: "Liga Fantasy",
+    time: new Date().toISOString(),
+  });
+});
 
-app.get(
-  "/api/health",
+app.get("/api/connection", async (_req, res) => {
+  try {
+    const biwenger = getClient();
+    await biwenger.inicializar();
 
-  (_req, res) => {
     res.json({
       ok: true,
-
-      service:
-        "Liga Fantasy API",
-
-      time:
-        new Date().toISOString(),
+      data: {
+        leagueId: biwenger.leagueId,
+        userId: biwenger.userId,
+        leagueName: biwenger.league?.name,
+        score: biwenger.score,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      message:
+        error?.message ||
+        "No se pudo conectar con Biwenger.",
     });
   }
-);
+});
 
-/*
-|--------------------------------------------------------------------------
-| CONEXIÓN
-|--------------------------------------------------------------------------
-*/
+app.get("/api/dashboard", async (_req, res) => {
+  try {
+    const data =
+      await getClient().obtenerDashboard();
 
-app.get(
-  "/api/connection",
+    res.json({
+      ok: true,
+      data,
+    });
+  } catch (error) {
+    console.error(error);
 
-  async (_req, res) => {
-    try {
-      const biwenger =
-        obtenerCliente();
-
-      await biwenger.inicializar();
-
-      res.json({
-        ok: true,
-
-        data: {
-          authenticated: true,
-
-          leagueId:
-            biwenger.leagueId,
-
-          userId:
-            biwenger.userId,
-
-          league:
-            biwenger.league
-              ?.name,
-        },
-      });
-    } catch (error) {
-      console.error(error);
-
-      res.status(500).json({
-        ok: false,
-
-        message:
-          error?.message ||
-          "No se pudo conectar.",
-      });
-    }
+    res.status(500).json({
+      ok: false,
+      message:
+        error?.message ||
+        "No se pudo cargar el dashboard.",
+    });
   }
-);
+});
 
-/*
-|--------------------------------------------------------------------------
-| DASHBOARD
-|--------------------------------------------------------------------------
-*/
+app.post("/api/reconnect", async (_req, res) => {
+  try {
+    client = null;
 
-app.get(
-  "/api/dashboard",
+    const data =
+      await getClient().obtenerDashboard();
 
-  async (_req, res) => {
-    try {
-      const data =
-        await obtenerCliente()
-          .obtenerDashboard();
-
-      res.json({
-        ok: true,
-
-        data,
-      });
-    } catch (error) {
-      console.error(
-        "BIWENGER ERROR:"
-      );
-
-      console.error(error);
-
-      res.status(500).json({
-        ok: false,
-
-        message:
-          error?.message ||
-          "Error conectando con Biwenger.",
-      });
-    }
+    res.json({
+      ok: true,
+      data,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      message:
+        error?.message ||
+        "No se pudo reconectar.",
+    });
   }
-);
+});
 
-/*
-|--------------------------------------------------------------------------
-| RECONECTAR
-|--------------------------------------------------------------------------
-*/
-
-app.post(
-  "/api/reconnect",
-
-  async (_req, res) => {
-    try {
-      /*
-       * Eliminamos el cliente
-       * para volver a detectar cuenta.
-       */
-
-      client = null;
-
-      const data =
-        await obtenerCliente()
-          .obtenerDashboard();
-
-      res.json({
-        ok: true,
-
-        data,
-      });
-    } catch (error) {
-      console.error(error);
-
-      res.status(500).json({
-        ok: false,
-
-        message:
-          error?.message ||
-          "No se pudo reconectar.",
-      });
-    }
-  }
-);
-
-/*
-|--------------------------------------------------------------------------
-| START
-|--------------------------------------------------------------------------
-*/
-
-app.listen(
-  PORT,
-
-  () => {
-    console.log("");
-
-    console.log(
-      "⚽ Liga Fantasy"
-    );
-
-    console.log(
-      `API: http://localhost:${PORT}`
-    );
-
-    console.log(
-      "Autenticación: Token Biwenger"
-    );
-
-    console.log("");
-  }
-);
+app.listen(PORT, () => {
+  console.log("");
+  console.log("⚽ Liga Fantasy");
+  console.log(
+    `API: http://localhost:${PORT}`
+  );
+  console.log("");
+});
