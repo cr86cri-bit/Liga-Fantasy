@@ -284,6 +284,81 @@ app.post(
   }
 );
 
+
+app.post(
+  "/api/actions/lineup",
+  async (req, res) => {
+    try {
+      if (
+        req.body?.confirm !==
+        true
+      ) {
+        return res
+          .status(400)
+          .json({
+            ok: false,
+            message:
+              "La alineación requiere confirmación explícita.",
+          });
+      }
+
+      const data =
+        await getClient()
+          .guardarAlineacion({
+            formation:
+              String(
+                req.body
+                  ?.formation ||
+                ""
+              ),
+
+            playersID:
+              req.body
+                ?.playersID,
+
+            reservesID:
+              req.body
+                ?.reservesID,
+
+            captain:
+              Number(
+                req.body
+                  ?.captain ||
+                0
+              ),
+
+            striker:
+              Number(
+                req.body
+                  ?.striker ||
+                0
+              ),
+          });
+
+      return res.json({
+        ok: true,
+        message:
+          "Alineación guardada en Biwenger.",
+        data,
+      });
+    } catch (error) {
+      console.error(
+        "[Biwenger lineup]",
+        error
+      );
+
+      return res
+        .status(400)
+        .json({
+          ok: false,
+          message:
+            error?.message ||
+            "No se pudo guardar la alineación.",
+        });
+    }
+  }
+);
+
 app.get("/api/dashboard", async (req, res) => {
   try {
     const refresh =
@@ -298,10 +373,17 @@ app.get("/api/dashboard", async (req, res) => {
         ""
       ) === "1";
 
+    const includeLineup =
+      String(
+        req.query?.includeLineup ||
+        ""
+      ) === "1";
+
     const data =
       await getClient().obtenerDashboard({
         refresh,
         includeRivals,
+        includeLineup,
       });
 
     res.json({

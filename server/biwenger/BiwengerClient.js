@@ -7,6 +7,10 @@ import {
 } from "../analytics/index.js";
 
 import {
+  FORMATIONS,
+} from "../analytics/config/formations.js";
+
+import {
   normalizarJugador,
 } from "../normalizers/playerNormalizer.js";
 
@@ -60,6 +64,9 @@ const TTL = {
   ownUser:
     10 * 60 * 1000,
 
+  lineup:
+    15 * 60 * 1000,
+
   leagueUsers:
     30 * 60 * 1000,
 
@@ -82,6 +89,9 @@ const MIN_RELOAD = {
 
   ownUser:
     2 * 60 * 1000,
+
+  lineup:
+    5 * 60 * 1000,
 
   leagueUsers:
     10 * 60 * 1000,
@@ -730,6 +740,35 @@ export class BiwengerClient {
     );
   }
 
+  async obtenerAlineacion({
+    force = false,
+  } = {}) {
+    return this.cache.get(
+      "lineup",
+      {
+        ttlMs:
+          TTL.lineup,
+
+        minReloadMs:
+          MIN_RELOAD.lineup,
+
+        force,
+
+        blocked:
+          this.guard.isBlocked(),
+
+        blockedError:
+          this.crearErrorRateLimit(),
+
+        loader:
+          () =>
+            this.request(
+              "/user?fields=lineup(date,type,captain,striker,playersID,reservesID)"
+            ),
+      }
+    );
+  }
+
   async obtenerPlantillaUsuario(
     userId,
     {
@@ -804,6 +843,7 @@ export class BiwengerClient {
   async obtenerDashboard({
     refresh = "smart",
     includeRivals = false,
+    includeLineup = false,
   } = {}) {
     await this.asegurarInfraestructura();
 
@@ -816,6 +856,17 @@ export class BiwengerClient {
         ) ||
         [
           "rivals",
+          "all",
+        ].includes(
+          refresh
+        );
+
+      const wantsLineup =
+        Boolean(
+          includeLineup
+        ) ||
+        [
+          "lineup",
           "all",
         ].includes(
           refresh
@@ -883,6 +934,43 @@ export class BiwengerClient {
 
       const persisted =
         await this.obtenerDashboardPersistido();
+
+      let lineup =
+        this.lastDashboard
+          ?.lineup ||
+        persisted
+          ?.lineup ||
+        null;
+
+      if (wantsLineup) {
+        const lineupResponse =
+          await this.obtenerAlineacion({
+            force:
+              refresh ===
+              "all",
+          });
+
+        lineup =
+          lineupResponse
+            ?.data
+            ?.lineup ||
+          {
+            type:
+              null,
+
+            playersID:
+              [],
+
+            reservesID:
+              [],
+
+            captain:
+              0,
+
+            striker:
+              0,
+          };
+      }
 
       const catalogData =
         catalogResponse?.data ||
@@ -1353,9 +1441,50 @@ export class BiwengerClient {
           }
         );
 
+      /*
+       * Los jugadores puestos a la venta siguen perteneciendo
+       * a la plantilla hasta que se complete una venta, pero
+       * ya no deben aparecer en el Mejor XI ni ser elegibles
+       * en el editor de alineación.
+       */
+      const ownListedIds =
+        new Set(
+          rawMarket
+            .filter(
+              (player) =>
+                player.isMine
+            )
+            .map(
+              (player) =>
+                Number(
+                  player.id
+                )
+            )
+        );
+
+      const squadForView =
+        squad.map(
+          (player) => ({
+            ...player,
+
+            isForSale:
+              ownListedIds.has(
+                Number(
+                  player.id
+                )
+              ),
+          })
+        );
+
+      const bestXICandidates =
+        squadForView.filter(
+          (player) =>
+            !player.isForSale
+        );
+
       const bestXI =
         generarMejorXI(
-          squad,
+          bestXICandidates,
           this.league
             ?.settings ||
             {}
@@ -1466,10 +1595,13 @@ export class BiwengerClient {
         },
 
         finances,
-        squad,
+        squad:
+          squadForView,
+
         market,
         marketMeta,
         bestXI,
+        lineup,
         rivals,
 
         system: {
@@ -1517,6 +1649,10 @@ export class BiwengerClient {
               TTL.ownUser /
               1000,
 
+            lineupSeconds:
+              TTL.lineup /
+              1000,
+
             rivalsSeconds:
               TTL.rivalSquad /
               1000,
@@ -1543,6 +1679,13 @@ export class BiwengerClient {
                 .getRemainingSeconds(
                   "own-user",
                   TTL.ownUser
+                ),
+
+            lineupSeconds:
+              this.cache
+                .getRemainingSeconds(
+                  "lineup",
+                  TTL.lineup
                 ),
 
             catalogSeconds:
@@ -1677,6 +1820,7 @@ export class BiwengerClient {
   invalidarCache({
     market = false,
     ownUser = false,
+    lineup = false,
     rivals = false,
     catalog = false,
     leagueUsers = false,
@@ -1696,6 +1840,12 @@ export class BiwengerClient {
     if (ownUser) {
       this.cache.invalidate(
         "own-user"
+      );
+    }
+
+    if (lineup) {
+      this.cache.invalidate(
+        "lineup"
       );
     }
 
@@ -1720,6 +1870,394 @@ export class BiwengerClient {
         0;
     }
   }
+
+async guardarAlineacion({
+  formation,
+  playersID,
+  reservesID = [],
+  captain = 0,
+  striker = 0,
+}) {
+  await this.inicializar();
+
+  if (
+    this.guard.isBlocked()
+  ) {
+    throw this.crearErrorRateLimit(
+      "No se puede guardar la alineación mientras la protección por límite de peticiones está activa."
+    );
+  }
+
+  const formationConfig =
+    FORMATIONS.find(
+      (item) =>
+        item.name ===
+        formation
+    );
+
+  if (!formationConfig) {
+    throw new Error(
+      "La formación seleccionada no es válida."
+    );
+  }
+
+  const starters =
+    (
+      Array.isArray(
+        playersID
+      )
+        ? playersID
+        : []
+    )
+      .map(Number)
+      .filter(
+        (id) =>
+          Number.isInteger(id) &&
+          id > 0
+      );
+
+  if (
+    starters.length !==
+    11 ||
+    new Set(
+      starters
+    ).size !==
+    11
+  ) {
+    throw new Error(
+      "La alineación debe tener exactamente 11 jugadores distintos."
+    );
+  }
+
+  const ownUserResponse =
+    await this.obtenerUsuarioPropio({
+      force:
+        false,
+    });
+
+  const ownedIds =
+    new Set(
+      (
+        ownUserResponse
+          ?.data
+          ?.players ||
+        []
+      )
+        .map(
+          (item) =>
+            Number(
+              item?.id ||
+              0
+            )
+        )
+        .filter(Boolean)
+    );
+
+  if (
+    starters.some(
+      (id) =>
+        !ownedIds.has(id)
+    )
+  ) {
+    throw new Error(
+      "La alineación contiene jugadores que ya no pertenecen a tu plantilla."
+    );
+  }
+
+  const marketResponse =
+    await this.obtenerMercado({
+      force:
+        false,
+    });
+
+  const listedOwnIds =
+    new Set(
+      (
+        marketResponse
+          ?.data
+          ?.sales ||
+        []
+      )
+        .filter(
+          (sale) =>
+            Number(
+              sale
+                ?.user
+                ?.id ||
+              0
+            ) ===
+            Number(
+              this.userId
+            )
+        )
+        .map(
+          (sale) =>
+            Number(
+              sale
+                ?.player
+                ?.id ||
+              0
+            )
+        )
+        .filter(Boolean)
+    );
+
+  if (
+    starters.some(
+      (id) =>
+        listedOwnIds.has(
+          id
+        )
+    )
+  ) {
+    throw new Error(
+      "No puedes guardar en el XI un jugador que está puesto a la venta."
+    );
+  }
+
+  const catalogResponse =
+    await this.obtenerCatalogo({
+      force:
+        false,
+    });
+
+  const catalogPlayers =
+    catalogResponse
+      ?.data
+      ?.players ||
+    {};
+
+  const positionCounts = {
+    AR: 0,
+    DF: 0,
+    MC: 0,
+    DL: 0,
+  };
+
+  for (
+    const id of
+      starters
+  ) {
+    const raw =
+      catalogPlayers[
+        String(id)
+      ] ||
+      {};
+
+    const position =
+      {
+        1: "AR",
+        2: "DF",
+        3: "MC",
+        4: "DL",
+      }[
+        Number(
+          raw?.position
+        )
+      ];
+
+    if (
+      position &&
+      positionCounts[
+        position
+      ] !==
+      undefined
+    ) {
+      positionCounts[
+        position
+      ] += 1;
+    }
+  }
+
+  for (
+    const position of
+      [
+        "AR",
+        "DF",
+        "MC",
+        "DL",
+      ]
+  ) {
+    if (
+      positionCounts[
+        position
+      ] !==
+      Number(
+        formationConfig[
+          position
+        ] ||
+        0
+      )
+    ) {
+      throw new Error(
+        `La formación ${formation} requiere ${formationConfig[position]} jugadores en ${position}.`
+      );
+    }
+  }
+
+  const sanitizedReserves =
+    (
+      Array.isArray(
+        reservesID
+      )
+        ? reservesID
+        : []
+    )
+      .map(Number)
+      .filter(
+        (id) =>
+          Number.isInteger(id) &&
+          id > 0 &&
+          ownedIds.has(id) &&
+          !starters.includes(id) &&
+          !listedOwnIds.has(id)
+      )
+      .filter(
+        (
+          id,
+          index,
+          array
+        ) =>
+          array.indexOf(id) ===
+          index
+      )
+      .slice(
+        0,
+        4
+      );
+
+  const captainId =
+    Number(
+      captain ||
+      0
+    );
+
+  if (
+    captainId !==
+      0 &&
+    !starters.includes(
+      captainId
+    )
+  ) {
+    throw new Error(
+      "El capitán debe formar parte del XI titular."
+    );
+  }
+
+  const strikerId =
+    Number(
+      striker ||
+      0
+    );
+
+  if (
+    strikerId !==
+      0 &&
+    !starters.includes(
+      strikerId
+    )
+  ) {
+    throw new Error(
+      "El ariete debe formar parte del XI titular."
+    );
+  }
+
+  if (
+    strikerId !==
+    0
+  ) {
+    const strikerRaw =
+      catalogPlayers[
+        String(
+          strikerId
+        )
+      ] ||
+      {};
+
+    if (
+      Number(
+        strikerRaw
+          ?.position ||
+        0
+      ) !==
+      4
+    ) {
+      throw new Error(
+        "El ariete debe ser un delantero."
+      );
+    }
+  }
+
+  const lineupPayload = {
+    type:
+      formation,
+
+    playersID:
+      starters,
+
+    reservesID:
+      sanitizedReserves,
+
+    captain:
+      captainId,
+  };
+
+  /*
+   * Biwenger expone `striker` dentro de lineup cuando la
+   * liga tiene habilitado el ariete. Enviamos 0 cuando el
+   * usuario no ha seleccionado ninguno, igual que con capitán.
+   */
+  if (
+    this.league
+      ?.settings
+      ?.lineupStriker !==
+    false
+  ) {
+    lineupPayload.striker =
+      strikerId;
+  }
+
+  const result =
+    await this.writeRequest(
+      "/user?fields=*,lineup(date)",
+      {
+        method:
+          "PUT",
+
+        body: {
+          lineup:
+            lineupPayload,
+        },
+      }
+    );
+
+  this.invalidarCache({
+    lineup:
+      true,
+  });
+
+  return {
+    operation:
+      "lineup",
+
+    formation,
+
+    playersID:
+      starters,
+
+    reservesID:
+      sanitizedReserves,
+
+    captain:
+      captainId,
+
+    striker:
+      strikerId,
+
+    biwenger:
+      result,
+  };
+}
 
   async writeRequest(
     path,

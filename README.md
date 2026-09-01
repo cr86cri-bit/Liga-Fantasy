@@ -240,3 +240,100 @@ peticiones evitadas por caché, cola actual, última petición, uso por endpoint
 próxima actualización y qué pestaña es la líder.
 
 El historial se guarda en `.cache/api-usage.json`.
+
+## Protección como pestaña + Mejor XI editable
+
+### Protección
+
+El bloque de protección ya no ocupa la cabecera principal. Ahora existe una
+pestaña independiente **Protección**, al mismo nivel que Mi equipo, Mercado,
+Mejor XI y Rivales.
+
+Ahí se concentran:
+
+- estado Seguro / Controlado / Bloqueado;
+- peticiones reales de la última hora y del día;
+- peticiones evitadas por caché;
+- cola de peticiones;
+- próxima actualización de Mercado, Mi equipo, Alineación, Rivales y Catálogo;
+- pestaña líder;
+- circuit breaker y cooldown.
+
+### Jugadores puestos a la venta
+
+Los jugadores propios publicados en el mercado:
+
+- aparecen con etiqueta **EN VENTA** en Mi equipo;
+- no permiten volver a pulsar Vender;
+- quedan excluidos del Mejor XI automático;
+- no pueden seleccionarse en el editor manual del XI.
+
+### Editar la alineación
+
+En **Mejor XI** se añadió **Editar mi XI**.
+
+Permite:
+
+- elegir una formación válida;
+- seleccionar exactamente los jugadores requeridos por posición;
+- volver al XI recomendado con un botón;
+- seleccionar capitán;
+- conservar suplentes válidos de la alineación actual;
+- guardar la alineación real en Biwenger.
+
+Antes de guardar siempre se muestra un modal de confirmación y el backend
+también exige `confirm: true`.
+
+La alineación actual se consulta únicamente al entrar a Mejor XI y se conserva
+15 minutos en caché para no aumentar innecesariamente las peticiones.
+
+La escritura usa el contrato interno/no oficial observado actualmente:
+
+`PUT /api/v2/user?fields=*,lineup(date)`
+
+con:
+
+```json
+{
+  "lineup": {
+    "type": "4-4-2",
+    "playersID": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    "reservesID": [],
+    "captain": 1
+  }
+}
+```
+
+Las escrituras siguen sin reintentos automáticos.
+
+### Legibilidad
+
+Se aumentó el tamaño de textos en las métricas, pestañas, tarjetas de jugadores,
+mercado, modales, panel de protección y editor de alineación.
+
+## Sincronización exacta de alineación con Biwenger
+
+La vista de Mejor XI ya no inventa capitán ni ariete cuando existe una
+alineación guardada.
+
+Al entrar a la pestaña se consulta:
+
+`GET /api/v2/user?fields=lineup(date,type,captain,striker,playersID,reservesID)`
+
+y la vista utiliza como fuente de verdad:
+
+- `type`: formación real.
+- `playersID`: los 11 titulares en el orden guardado por Biwenger.
+- `captain`: capitán real; `0/null` significa sin capitán.
+- `striker`: ariete real; `0/null` significa sin ariete.
+- `reservesID`: suplentes.
+
+El orden `playersID` se conserva al construir cada línea del campo, evitando
+que el algoritmo de recomendación o el orden de la plantilla cambien
+horizontalmente a los jugadores.
+
+La recomendación automática queda separada: solo se aplica si el usuario entra
+en **Editar mi XI** y pulsa **Usar recomendado**.
+
+El guardado también acepta `striker` y sigue usando confirmación obligatoria,
+cola anti-rate-limit y una única escritura sin reintentos automáticos.

@@ -4254,3 +4254,753 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* =========================================================
+   LEGIBILIDAD GENERAL · TEXTOS MÁS GRANDES
+   ========================================================= */
+
+body {
+  font-size: 16px;
+}
+
+.brand {
+  font-size: 11px;
+}
+
+.header p {
+  font-size: 15px;
+}
+
+.section-label {
+  font-size: 10px;
+}
+
+.section-header h2,
+.xi-topbar h2 {
+  font-size: 24px;
+}
+
+.section-header p,
+.xi-topbar p {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.metric span {
+  font-size: 11px;
+}
+
+.metric strong {
+  font-size: 27px;
+}
+
+.metric small {
+  font-size: 10px;
+}
+
+.tabs button {
+  min-height: 54px;
+  padding-inline: 17px;
+  font-size: 15px;
+}
+
+.tabs button span {
+  min-width: 23px;
+  height: 23px;
+  font-size: 9px;
+}
+
+.chip-name strong {
+  font-size: 14px;
+}
+
+.chip-club,
+.market-chip-identity > span {
+  font-size: 11px;
+}
+
+.chip-stats small,
+.market-chip-stats span {
+  font-size: 9px;
+}
+
+.chip-stats strong,
+.market-chip-stats strong {
+  font-size: 12px;
+}
+
+.detail-button,
+.chip-operation-button,
+.market-filters button,
+.market-position-filter-copy strong,
+.notification-button strong,
+.notification-history-button strong {
+  font-size: 10px;
+}
+
+.position,
+.recommendation,
+.status,
+.price-tag {
+  font-size: 9px;
+}
+
+.modal-header h2 {
+  font-size: 23px;
+}
+
+.modal-header p,
+.modal-body p {
+  font-size: 12px;
+}
+
+.api-protection-head p,
+.rivals-loading-card p,
+.sports-sources-intro p {
+  font-size: 11px;
+}
+
+.api-protection-metrics span,
+.api-protection-metrics small,
+.api-next-refresh span,
+.api-endpoint-details summary {
+  font-size: 9px;
+}
+
+.api-protection-metrics strong {
+  font-size: 20px;
+}
+
+.api-next-refresh strong {
+  font-size: 11px;
+}
+
+footer {
+  font-size: 10px;
+}
+
+/* =========================================================
+   PROTECCIÓN COMO PESTAÑA
+   ========================================================= */
+
+.tab-status-safe {
+  background: rgba(66, 219, 116, 0.18) !important;
+  color: #72e99a !important;
+}
+
+.tab-status-danger {
+  background: rgba(244, 83, 83, 0.20) !important;
+  color: #ff8585 !important;
+}
+
+.protection-cache-status {
+  margin-bottom: 12px;
+}
+
+.protection-info-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.protection-info-grid article {
+  display: flex;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid #1f442f;
+  border-radius: 14px;
+  background: #0a1f13;
+}
+
+.protection-info-grid article > span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 11px;
+  background: #143722;
+  font-size: 19px;
+}
+
+.protection-info-grid strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.protection-info-grid p {
+  margin: 0;
+  color: #718477;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+/* =========================================================
+   JUGADORES EN VENTA
+   ========================================================= */
+
+.for-sale-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 7px;
+  border: 1px solid #6b5420;
+  border-radius: 999px;
+  background: #2b220e;
+  color: #efc55d;
+  font-size: 8px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.detail-for-sale-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 37px;
+  padding: 0 12px;
+  border: 1px solid #6b5420;
+  border-radius: 10px;
+  background: #2b220e;
+  color: #efc55d;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.chip-operation-button.already-listed {
+  border-color: #526057;
+  background: #1a241d;
+  color: #758079;
+  cursor: default;
+}
+
+/* =========================================================
+   MEJOR XI EDITABLE
+   ========================================================= */
+
+.xi-topbar-editable {
+  align-items: center;
+  gap: 14px;
+}
+
+.xi-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-left: auto;
+}
+
+.xi-edit-button,
+.xi-secondary-button,
+.lineup-save-button {
+  min-height: 39px;
+  padding: 0 13px;
+  border: 1px solid;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.xi-edit-button,
+.lineup-save-button {
+  border-color: #398356;
+  background: #18562e;
+  color: #a7f1bd;
+}
+
+.xi-secondary-button {
+  border-color: #34503f;
+  background: #12291a;
+  color: #9bada1;
+}
+
+.xi-edit-button:hover,
+.xi-secondary-button:hover,
+.lineup-save-button:hover {
+  transform: translateY(-1px);
+}
+
+.lineup-save-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.lineup-editor-controls {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(210px, 280px);
+  gap: 14px;
+  align-items: end;
+  margin: 14px 0 9px;
+  padding: 13px;
+  border: 1px solid #21472f;
+  border-radius: 13px;
+  background: #0a1e12;
+}
+
+.formation-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.formation-buttons button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid #2b4c38;
+  border-radius: 8px;
+  background: #10271a;
+  color: #819287;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.formation-buttons button.active {
+  border-color: #4ca56a;
+  background: #1a5a31;
+  color: #c6f7d3;
+}
+
+.lineup-captain-select > span {
+  display: block;
+  margin-bottom: 6px;
+  color: #7a8e81;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.lineup-captain-select select {
+  width: 100%;
+  min-height: 39px;
+  padding: 0 10px;
+  border: 1px solid #315b41;
+  border-radius: 9px;
+  outline: 0;
+  background: #081910;
+  color: #effff4;
+  font-size: 12px;
+}
+
+.lineup-position-summary {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 9px;
+}
+
+.lineup-position-summary > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  border: 1px solid #39443d;
+  border-radius: 9px;
+  background: #121b15;
+}
+
+.lineup-position-summary > div.complete {
+  border-color: #2f7449;
+  background: #10331e;
+}
+
+.lineup-position-summary span {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.lineup-player-pool {
+  margin-top: 15px;
+  padding: 14px;
+  border: 1px solid #20462f;
+  border-radius: 14px;
+  background: #081c10;
+}
+
+.lineup-pool-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.lineup-pool-head h3 {
+  margin: 3px 0;
+  font-size: 18px;
+}
+
+.lineup-pool-head p {
+  margin: 0;
+  color: #708376;
+  font-size: 11px;
+}
+
+.lineup-pool-position + .lineup-pool-position {
+  margin-top: 13px;
+}
+
+.lineup-pool-position-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.lineup-pool-position-title strong {
+  font-size: 12px;
+}
+
+.lineup-pool-position-title > span:last-child {
+  margin-left: auto;
+  color: #809488;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.lineup-player-options {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.lineup-player-option {
+  display: grid;
+  grid-template-columns:
+    42px
+    minmax(0, 1fr)
+    auto;
+  align-items: center;
+  gap: 9px;
+  min-height: 59px;
+  padding: 8px;
+  border: 1px solid #263e30;
+  border-radius: 10px;
+  background: #0e2116;
+  color: #d5e5da;
+  cursor: pointer;
+  text-align: left;
+}
+
+.lineup-player-option:hover:not(:disabled) {
+  border-color: #46775a;
+}
+
+.lineup-player-option.selected {
+  border-color: #48a76b;
+  background: #123c23;
+}
+
+.lineup-player-option.for-sale {
+  border-color: #5b4923;
+  background: #241f12;
+  opacity: 0.62;
+}
+
+.lineup-player-option:disabled {
+  cursor: not-allowed;
+}
+
+.lineup-player-option > span strong,
+.lineup-player-option > span small {
+  display: block;
+}
+
+.lineup-player-option > span strong {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lineup-player-option > span small {
+  margin-top: 2px;
+  color: #687a6e;
+  font-size: 9px;
+}
+
+.lineup-option-status {
+  min-width: 29px;
+  padding: 4px 6px;
+  border-radius: 999px;
+  font-size: 7px;
+  text-align: center;
+}
+
+.lineup-option-status.selected {
+  background: #1f6137;
+  color: #a6f3bd;
+}
+
+.lineup-option-status.sale {
+  background: #60491a;
+  color: #ffd773;
+}
+
+.lineup-option-status.add {
+  background: #1c3425;
+  color: #75d793;
+  font-size: 13px;
+}
+
+.lineup-validation-message {
+  margin-top: 12px;
+  padding: 10px 11px;
+  border: 1px solid #705625;
+  border-radius: 9px;
+  background: #2b220f;
+  color: #e5c66d;
+  font-size: 10px;
+}
+
+.lineup-confirm-summary {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.lineup-confirm-summary > div {
+  padding: 10px;
+  border-radius: 9px;
+  background: #0c2516;
+}
+
+.lineup-confirm-summary span,
+.lineup-confirm-summary strong {
+  display: block;
+}
+
+.lineup-confirm-summary span {
+  color: #708378;
+  font-size: 9px;
+}
+
+.lineup-confirm-summary strong {
+  margin-top: 3px;
+  font-size: 13px;
+}
+
+.lineup-confirm-players {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.lineup-confirm-players > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 9px;
+  border: 1px solid #1d3a29;
+  border-radius: 8px;
+  background: #091b10;
+}
+
+.lineup-confirm-players > div > span {
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lineup-confirm-players > div > b {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-left: auto;
+  border-radius: 999px;
+  background: #e8b23e;
+  color: #241a06;
+  font-size: 8px;
+}
+
+.read-only-note {
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+@media (max-width: 980px) {
+  .protection-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lineup-player-options {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .tabs button {
+    font-size: 13px;
+  }
+
+  .lineup-editor-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .lineup-position-summary {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .lineup-pool-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .lineup-player-options {
+    grid-template-columns: 1fr;
+  }
+
+  .lineup-confirm-summary,
+  .lineup-confirm-players {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Ajuste del panel Protección para incluir Alineación. */
+.api-next-refresh {
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+}
+
+@media (max-width: 950px) {
+  .api-next-refresh {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .api-next-refresh {
+    grid-template-columns: 1fr;
+  }
+}
+
+.xi-edit-button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+  transform: none;
+}
+
+
+/* =========================================================
+   XI SINCRONIZADO CON BIWENGER
+   ========================================================= */
+
+.xi-specials-sync {
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(135px, 1fr)
+    );
+}
+
+.lineup-editor-controls-sync {
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(330px, 430px);
+}
+
+.lineup-role-selectors {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+  gap: 8px;
+}
+
+.lineup-confirm-summary-four {
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(0, 1fr)
+    );
+}
+
+.lineup-confirm-roles {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.lineup-confirm-roles b {
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border-radius: 999px;
+  font-size: 8px;
+}
+
+.lineup-confirm-roles
+  .role-captain {
+  background: #f0bd42;
+  color: #241a06;
+}
+
+.lineup-confirm-roles
+  .role-striker {
+  background: #df594f;
+  color: #fff;
+}
+
+.football-pitch-synced
+  .pitch-line {
+  /*
+   * Los elementos ya llegan en el mismo orden que playersID.
+   * No usamos order CSS ni reordenamientos visuales.
+   */
+  direction: ltr;
+}
+
+.lineup-sync-note {
+  padding: 11px 12px;
+  border: 1px solid #2b5b40;
+  border-radius: 10px;
+  background: rgba(17, 53, 31, 0.50);
+}
+
+.lineup-sync-note strong {
+  color: #8bedaa;
+}
+
+@media (max-width: 850px) {
+  .xi-specials-sync {
+    grid-template-columns:
+      1fr;
+  }
+
+  .lineup-editor-controls-sync {
+    grid-template-columns:
+      1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .lineup-role-selectors,
+  .lineup-confirm-summary-four {
+    grid-template-columns:
+      1fr;
+  }
+}
