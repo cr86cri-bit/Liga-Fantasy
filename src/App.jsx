@@ -16,7 +16,7 @@ const MARKET_SNAPSHOT_KEY =
   "liga-fantasy-market-snapshot-v2";
 
 const SOFASCORE_PROFILE_CACHE_KEY =
-  "liga-fantasy-sofascore-profiles-v1";
+  "liga-fantasy-sports-sources-v1";
 
 function formatMoney(value) {
   return money.format(Number(value || 0));
@@ -416,14 +416,100 @@ function SellerBadge({ player }) {
   );
 }
 
-function SofaScoreProfileButton({
+const SPORTS_SOURCES = [
+  {
+    key: "sofascore",
+    name: "SofaScore",
+    short: "S",
+    domain: "sofascore.com/football/player",
+    description:
+      "Valoraciones, estadísticas por partido, forma y mapas de rendimiento.",
+    features: [
+      "Valoraciones",
+      "Estadísticas",
+      "Forma",
+    ],
+  },
+  {
+    key: "fotmob",
+    name: "FotMob",
+    short: "F",
+    domain: "fotmob.com/players",
+    description:
+      "Ratings, xG, xA, mapas de calor, tiros y métricas avanzadas.",
+    features: [
+      "xG / xA",
+      "Mapa de calor",
+      "Ratings",
+    ],
+  },
+  {
+    key: "flashscore",
+    name: "Flashscore",
+    short: "FL",
+    domain: "flashscore.com/player",
+    description:
+      "Resultados en vivo, minutos, eventos, alineaciones y seguimiento rápido.",
+    features: [
+      "En vivo",
+      "Eventos",
+      "Alineaciones",
+    ],
+  },
+  {
+    key: "365scores",
+    name: "365Scores",
+    short: "365",
+    domain: "365scores.com",
+    description:
+      "Resultados, noticias, calendarios, alineaciones y estadísticas.",
+    features: [
+      "Resultados",
+      "Noticias",
+      "Estadísticas",
+    ],
+  },
+  {
+    key: "besoccer",
+    name: "BeSoccer",
+    short: "B",
+    domain: "besoccer.com/player",
+    description:
+      "Perfil, ELO, valor, forma, lesiones, transferencias y trayectoria.",
+    features: [
+      "ELO",
+      "Lesiones",
+      "Transferencias",
+    ],
+  },
+  {
+    key: "whoscored",
+    name: "WhoScored",
+    short: "W",
+    domain: "whoscored.com/Players",
+    description:
+      "Valoraciones, estadísticas detalladas y análisis de rendimiento.",
+    features: [
+      "Ratings",
+      "Rendimiento",
+      "Análisis",
+    ],
+  },
+];
+
+function SportsSourcesButton({
   player,
 }) {
   const [
-    state,
-    setState,
+    open,
+    setOpen,
+  ] = useState(false);
+
+  const [
+    sofaState,
+    setSofaState,
   ] = useState({
-    status: "loading",
+    status: "idle",
     profile: null,
     fallbackUrl: null,
   });
@@ -446,15 +532,24 @@ function SofaScoreProfileButton({
       async () => {
         try {
           const local =
-            leerCacheSofaScore(
+            leerCacheSportsSource(
               cacheKey
             );
 
-          if (local?.profile?.url) {
-            setState({
-              status: "ready",
+          if (
+            local?.profile?.url ||
+            local?.fallbackUrl
+          ) {
+            setSofaState({
+              status:
+                local?.profile?.url
+                  ? "ready"
+                  : "fallback",
+
               profile:
-                local.profile,
+                local.profile ||
+                null,
+
               fallbackUrl:
                 local.fallbackUrl ||
                 null,
@@ -463,12 +558,10 @@ function SofaScoreProfileButton({
             return;
           }
 
-          setState({
+          setSofaState({
             status: "loading",
             profile: null,
-            fallbackUrl:
-              local?.fallbackUrl ||
-              null,
+            fallbackUrl: null,
           });
 
           const params =
@@ -506,38 +599,33 @@ function SofaScoreProfileButton({
           const result =
             body?.data || {};
 
-          const next =
-            result?.found &&
-            result?.profile?.url
-              ? {
-                  status:
-                    "ready",
+          const next = {
+            status:
+              result?.found &&
+              result?.profile?.url
+                ? "ready"
+                : "fallback",
 
-                  profile:
-                    result.profile,
+            profile:
+              result?.profile ||
+              null,
 
-                  fallbackUrl:
-                    result.fallbackUrl ||
-                    null,
-                }
-              : {
-                  status:
-                    "not-found",
+            fallbackUrl:
+              result?.fallbackUrl ||
+              crearBusquedaFuente(
+                "sofascore",
+                player
+              ),
+          };
 
-                  profile:
-                    null,
-
-                  fallbackUrl:
-                    result.fallbackUrl ||
-                    null,
-                };
-
-          guardarCacheSofaScore(
+          guardarCacheSportsSource(
             cacheKey,
             next
           );
 
-          setState(next);
+          setSofaState(
+            next
+          );
         } catch (error) {
           if (
             error?.name ===
@@ -546,11 +634,12 @@ function SofaScoreProfileButton({
             return;
           }
 
-          setState({
-            status: "error",
+          setSofaState({
+            status: "fallback",
             profile: null,
             fallbackUrl:
-              crearBusquedaSofaScoreFallback(
+              crearBusquedaFuente(
+                "sofascore",
                 player
               ),
           });
@@ -567,92 +656,218 @@ function SofaScoreProfileButton({
     player?.teamName,
   ]);
 
-  const isReady =
-    state.status ===
-      "ready" &&
-    state.profile?.url;
+  const openSource =
+    (sourceKey) => {
+      let url = null;
 
-  const canFallback =
-    !isReady &&
-    Boolean(
-      state.fallbackUrl
-    );
+      if (
+        sourceKey ===
+        "sofascore"
+      ) {
+        url =
+          sofaState
+            ?.profile
+            ?.url ||
+          sofaState
+            ?.fallbackUrl ||
+          crearBusquedaFuente(
+            "sofascore",
+            player
+          );
+      } else {
+        url =
+          crearBusquedaFuente(
+            sourceKey,
+            player
+          );
+      }
 
-  const handleOpen = () => {
-    const url =
-      isReady
-        ? state.profile.url
-        : state.fallbackUrl;
+      if (!url) {
+        return;
+      }
 
-    if (!url) {
-      return;
-    }
-
-    window.open(
-      url,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  };
+      window.open(
+        url,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    };
 
   return (
-    <button
-      type="button"
-      className={`sofascore-profile-button sofascore-profile-${state.status}`}
-      onClick={handleOpen}
-      disabled={
-        state.status ===
-          "loading" ||
-        (!isReady &&
-          !canFallback)
-      }
-      title={
-        isReady
-          ? "Abrir perfil del jugador en SofaScore"
-          : "Buscar el perfil del jugador"
-      }
-    >
-      <span className="sofascore-logo">
-        S
-      </span>
+    <>
+      <button
+        type="button"
+        className="sports-sources-button"
+        onClick={() =>
+          setOpen(true)
+        }
+        title="Abrir fuentes deportivas del jugador"
+      >
+        <span className="sports-sources-icon">
+          ◎
+        </span>
 
-      <span className="sofascore-button-copy">
-        <small>
-          SOFASCORE
-        </small>
+        <span className="sports-sources-copy">
+          <small>
+            FUENTES DEPORTIVAS
+          </small>
 
-        <strong>
-          {state.status ===
-          "loading"
-            ? "Buscando perfil..."
-            : isReady
-              ? "Ver perfil"
-              : "Buscar perfil"}
-        </strong>
+          <strong>
+            Ver estadísticas externas
+          </strong>
 
-        <em>
-          {isReady
-            ? state.profile
-                ?.teamName ||
-              "Perfil encontrado"
-            : state.status ===
-                "error"
-              ? "Búsqueda alternativa"
-              : state.status ===
-                  "not-found"
-                ? "Coincidencia no confirmada"
-                : "Datos y estadísticas"}
-        </em>
-      </span>
+          <em>
+            6 plataformas
+          </em>
+        </span>
 
-      <span className="sofascore-arrow">
-        ↗
-      </span>
-    </button>
+        <span className="sports-sources-arrow">
+          ›
+        </span>
+      </button>
+
+      <Modal
+        open={open}
+        onClose={() =>
+          setOpen(false)
+        }
+        title="Fuentes deportivas"
+        subtitle={`${player.name} · ${player.teamName}`}
+        wide
+      >
+        <div className="sports-sources-intro">
+          <div>
+            <span className="section-label">
+              PERFIL EXTERNO
+            </span>
+
+            <h3>
+              Compara al jugador en varias plataformas
+            </h3>
+
+            <p>
+              Cada fuente aporta datos distintos. Cuando no podemos
+              resolver el perfil exacto automáticamente, abrimos una
+              búsqueda restringida a esa plataforma.
+            </p>
+          </div>
+
+          <PlayerPhoto
+            player={player}
+            size="normal"
+          />
+        </div>
+
+        <div className="sports-source-grid">
+          {SPORTS_SOURCES.map(
+            (source) => {
+              const isSofa =
+                source.key ===
+                "sofascore";
+
+              const sofaDirect =
+                isSofa &&
+                Boolean(
+                  sofaState
+                    ?.profile
+                    ?.url
+                );
+
+              return (
+                <article
+                  className={`sports-source-card sports-source-${source.key}`}
+                  key={
+                    source.key
+                  }
+                >
+                  <div className="sports-source-card-head">
+                    <span className="sports-source-logo">
+                      {
+                        source.short
+                      }
+                    </span>
+
+                    <div>
+                      <strong>
+                        {
+                          source.name
+                        }
+                      </strong>
+
+                      <small>
+                        {sofaDirect
+                          ? "Perfil encontrado"
+                          : isSofa &&
+                              sofaState.status ===
+                                "loading"
+                            ? "Buscando perfil..."
+                            : "Buscar jugador"}
+                      </small>
+                    </div>
+                  </div>
+
+                  <p>
+                    {
+                      source.description
+                    }
+                  </p>
+
+                  <div className="sports-source-features">
+                    {source.features.map(
+                      (feature) => (
+                        <span
+                          key={
+                            feature
+                          }
+                        >
+                          {
+                            feature
+                          }
+                        </span>
+                      )
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="sports-source-open"
+                    onClick={() =>
+                      openSource(
+                        source.key
+                      )
+                    }
+                  >
+                    {sofaDirect
+                      ? "Abrir perfil"
+                      : `Buscar en ${source.name}`}
+
+                    <span>
+                      ↗
+                    </span>
+                  </button>
+                </article>
+              );
+            }
+          )}
+        </div>
+
+        <div className="sports-source-note">
+          <strong>
+            Sobre los datos externos
+          </strong>
+
+          <p>
+            Estas plataformas no comparten una API pública única y estable.
+            Por eso esta versión las usa como fuentes externas de consulta
+            sin mezclar datos automáticamente con la nota Fantasy.
+          </p>
+        </div>
+      </Modal>
+    </>
   );
 }
 
-function leerCacheSofaScore(
+function leerCacheSportsSource(
   key
 ) {
   try {
@@ -675,10 +890,6 @@ function leerCacheSofaScore(
       return null;
     }
 
-    /*
-     * Perfil encontrado: cache 7 días.
-     * Fallback/no encontrado: cache 1 hora.
-     */
     const ttl =
       item?.profile?.url
         ? 7 *
@@ -693,7 +904,8 @@ function leerCacheSofaScore(
     if (
       Date.now() -
         Number(
-          item.savedAt || 0
+          item.savedAt ||
+          0
         ) >
       ttl
     ) {
@@ -706,7 +918,7 @@ function leerCacheSofaScore(
   }
 }
 
-function guardarCacheSofaScore(
+function guardarCacheSportsSource(
   key,
   value
 ) {
@@ -729,23 +941,33 @@ function guardarCacheSofaScore(
 
     localStorage.setItem(
       SOFASCORE_PROFILE_CACHE_KEY,
-      JSON.stringify(parsed)
+      JSON.stringify(
+        parsed
+      )
     );
   } catch {
-    /*
-     * Si el navegador bloquea localStorage,
-     * el enlace sigue funcionando; simplemente
-     * se resolverá otra vez la próxima vez.
-     */
+    // La caché es opcional.
   }
 }
 
-function crearBusquedaSofaScoreFallback(
+function crearBusquedaFuente(
+  sourceKey,
   player
 ) {
+  const source =
+    SPORTS_SOURCES.find(
+      (item) =>
+        item.key ===
+        sourceKey
+    );
+
+  if (!source) {
+    return null;
+  }
+
   const query =
     [
-      "site:sofascore.com/football/player",
+      `site:${source.domain}`,
       `"${player?.name || ""}"`,
       player?.teamName
         ? `"${player.teamName}"`
@@ -796,7 +1018,7 @@ function PlayerDetailModal({ player, onClose, context = "team", now }) {
           </div>
         </div>
 
-        <SofaScoreProfileButton
+        <SportsSourcesButton
           player={player}
         />
 
@@ -1151,6 +1373,181 @@ function MarketFilters({ value, onChange, counts }) {
   );
 }
 
+const MARKET_POSITIONS = [
+  {
+    key: "all",
+    label: "Todas",
+    description:
+      "Mostrar todas las posiciones",
+    icon: "⚽",
+  },
+  {
+    key: "AR",
+    label: "Porteros",
+    description:
+      "Arqueros y porteros",
+    icon: "🧤",
+  },
+  {
+    key: "DF",
+    label: "Defensas",
+    description:
+      "Laterales y defensores",
+    icon: "🛡️",
+  },
+  {
+    key: "MC",
+    label: "Centrocampistas",
+    description:
+      "Mediocampistas",
+    icon: "🎯",
+  },
+  {
+    key: "DL",
+    label: "Delanteros",
+    description:
+      "Atacantes",
+    icon: "⚡",
+  },
+];
+
+function MarketPositionFilterButton({
+  value,
+  counts,
+  onClick,
+}) {
+  const current =
+    MARKET_POSITIONS.find(
+      (item) =>
+        item.key ===
+        value
+    ) ||
+    MARKET_POSITIONS[0];
+
+  return (
+    <button
+      type="button"
+      className={`market-position-filter-button ${
+        value !== "all"
+          ? "active"
+          : ""
+      }`}
+      onClick={onClick}
+    >
+      <span className="market-position-filter-icon">
+        {current.icon}
+      </span>
+
+      <span className="market-position-filter-copy">
+        <small>
+          Posición
+        </small>
+
+        <strong>
+          {current.label}
+        </strong>
+      </span>
+
+      <span className="market-position-filter-count">
+        {counts?.[
+          value
+        ] ??
+          counts?.all ??
+          0}
+      </span>
+
+      <span className="market-position-filter-chevron">
+        ⌄
+      </span>
+    </button>
+  );
+}
+
+function MarketPositionFilterModal({
+  open,
+  value,
+  counts,
+  onSelect,
+  onClose,
+}) {
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Filtrar por posición"
+      subtitle="Elige qué posición quieres ver en el mercado."
+    >
+      <div className="position-filter-list">
+        {MARKET_POSITIONS.map(
+          (item) => {
+            const active =
+              value ===
+              item.key;
+
+            return (
+              <button
+                type="button"
+                key={
+                  item.key
+                }
+                className={`position-filter-option ${
+                  active
+                    ? "active"
+                    : ""
+                }`}
+                onClick={() => {
+                  onSelect(
+                    item.key
+                  );
+
+                  onClose();
+                }}
+              >
+                <span className="position-filter-option-icon">
+                  {item.icon}
+                </span>
+
+                <span className="position-filter-option-copy">
+                  <strong>
+                    {item.label}
+                  </strong>
+
+                  <small>
+                    {
+                      item.description
+                    }
+                  </small>
+                </span>
+
+                {item.key !==
+                  "all" && (
+                  <Position
+                    position={
+                      item.key
+                    }
+                  />
+                )}
+
+                <span className="position-filter-option-count">
+                  {counts?.[
+                    item.key
+                  ] || 0}
+                </span>
+
+                <span className="position-filter-check">
+                  {active
+                    ? "✓"
+                    : ""}
+                </span>
+              </button>
+            );
+          }
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 function BestXI({ bestXI, onPlayerDetails }) {
   if (!bestXI?.players?.length) {
     return <div className="empty-state">No se pudo generar un XI con la plantilla actual.</div>;
@@ -1426,6 +1823,8 @@ export default function App() {
   const [data, setData] = useState(null);
   const [tab, setTab] = useState("team");
   const [marketFilter, setMarketFilter] = useState("all");
+  const [marketPosition, setMarketPosition] = useState("all");
+  const [positionFilterOpen, setPositionFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -1566,23 +1965,115 @@ export default function App() {
     [data]
   );
 
-  const marketCounts = useMemo(() => ({
-    all: market.length,
-    market: market.filter((player) => player.sellerType === "market").length,
-    users: market.filter((player) => player.sellerType === "user").length,
-  }), [market]);
+const marketCounts = useMemo(
+  () => ({
+    all:
+      market.length,
 
-  const filteredMarket = useMemo(() => {
-    if (marketFilter === "market") {
-      return market.filter((player) => player.sellerType === "market");
+    market:
+      market.filter(
+        (player) =>
+          player.sellerType ===
+          "market"
+      ).length,
+
+    users:
+      market.filter(
+        (player) =>
+          player.sellerType ===
+          "user"
+      ).length,
+  }),
+  [market]
+);
+
+const sellerFilteredMarket =
+  useMemo(() => {
+    if (
+      marketFilter ===
+      "market"
+    ) {
+      return market.filter(
+        (player) =>
+          player.sellerType ===
+          "market"
+      );
     }
 
-    if (marketFilter === "users") {
-      return market.filter((player) => player.sellerType === "user");
+    if (
+      marketFilter ===
+      "users"
+    ) {
+      return market.filter(
+        (player) =>
+          player.sellerType ===
+          "user"
+      );
     }
 
     return market;
-  }, [market, marketFilter]);
+  }, [
+    market,
+    marketFilter,
+  ]);
+
+const marketPositionCounts =
+  useMemo(
+    () => ({
+      all:
+        sellerFilteredMarket.length,
+
+      AR:
+        sellerFilteredMarket.filter(
+          (player) =>
+            player.position ===
+            "AR"
+        ).length,
+
+      DF:
+        sellerFilteredMarket.filter(
+          (player) =>
+            player.position ===
+            "DF"
+        ).length,
+
+      MC:
+        sellerFilteredMarket.filter(
+          (player) =>
+            player.position ===
+            "MC"
+        ).length,
+
+      DL:
+        sellerFilteredMarket.filter(
+          (player) =>
+            player.position ===
+            "DL"
+        ).length,
+    }),
+    [
+      sellerFilteredMarket,
+    ]
+  );
+
+const filteredMarket =
+  useMemo(() => {
+    if (
+      marketPosition ===
+      "all"
+    ) {
+      return sellerFilteredMarket;
+    }
+
+    return sellerFilteredMarket.filter(
+      (player) =>
+        player.position ===
+        marketPosition
+    );
+  }, [
+    sellerFilteredMarket,
+    marketPosition,
+  ]);
 
   const xiPlayerFull = useMemo(() => {
     if (!selectedXIPlayer) return null;
@@ -1746,7 +2237,23 @@ export default function App() {
             title="Mercado actual"
             description="El sistema comprueba cambios cada 60 segundos y al llegar el contador general a cero."
           >
-            <MarketFilters value={marketFilter} onChange={setMarketFilter} counts={marketCounts} />
+            <div className="market-filter-controls">
+  <MarketFilters
+    value={marketFilter}
+    onChange={setMarketFilter}
+    counts={marketCounts}
+  />
+
+  <MarketPositionFilterButton
+    value={marketPosition}
+    counts={marketPositionCounts}
+    onClick={() =>
+      setPositionFilterOpen(
+        true
+      )
+    }
+  />
+</div>
           </SectionHeader>
 
           <MarketStatusBar
@@ -1768,7 +2275,7 @@ export default function App() {
                 />
               ))
             ) : (
-              <div className="empty-state">No hay ofertas para este filtro.</div>
+              <div className="empty-state">No hay jugadores que coincidan con los filtros seleccionados.</div>
             )}
           </section>
         </main>
@@ -1795,6 +2302,19 @@ export default function App() {
           Última sincronización: {data?.syncedAt ? new Date(data.syncedAt).toLocaleString("es-BO") : "-"}
         </span>
       </footer>
+
+
+<MarketPositionFilterModal
+  open={positionFilterOpen}
+  value={marketPosition}
+  counts={marketPositionCounts}
+  onSelect={setMarketPosition}
+  onClose={() =>
+    setPositionFilterOpen(
+      false
+    )
+  }
+/>
 
       <PlayerDetailModal player={selectedTeamPlayer} context="team" now={now} onClose={() => setSelectedTeamPlayer(null)} />
       <PlayerDetailModal player={selectedMarketPlayer} context="market" now={now} onClose={() => setSelectedMarketPlayer(null)} />

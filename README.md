@@ -52,3 +52,54 @@ Al abrir el modal:
 La búsqueda de SofaScore usa endpoints web no documentados públicamente por
 SofaScore, por lo que pueden cambiar en el futuro. El resto del dashboard no
 depende de esta integración y seguirá funcionando aunque SofaScore no responda.
+
+## Cambios: SofaScore directo + filtro de posición
+
+### SofaScore directo
+
+El detalle del jugador ya no abre una búsqueda de Google. El backend intenta
+resolver el perfil usando SofaScore directamente y prueba también el mirror
+`api.sofascore.app`. Cuando encuentra una coincidencia segura, verifica el ID
+cuando es posible y abre directamente:
+
+`https://www.sofascore.com/football/player/<slug>/<id>`
+
+Si no puede confirmar el perfil, el botón queda como **Perfil no encontrado**.
+
+### Filtro de posición en Mercado
+
+El mercado mantiene **Todos / Mercado / Jugadores** y añade un botón
+**Posición** que abre un modal con:
+
+- Todas
+- AR / Porteros
+- DF / Defensas
+- MC / Centrocampistas
+- DL / Delanteros
+
+Ambos filtros funcionan juntos. Ejemplo: **Mercado + DL**.
+
+## Fuentes deportivas externas
+
+Se restauró el comportamiento anterior de SofaScore:
+
+- si el perfil se resuelve automáticamente, abre el perfil directo;
+- si no se puede confirmar, usa una búsqueda restringida al sitio de SofaScore.
+
+Además, el espacio del detalle del jugador ahora abre un centro de
+**Fuentes deportivas** con:
+
+- SofaScore
+- FotMob
+- Flashscore
+- 365Scores
+- BeSoccer
+- WhoScored
+
+SofaScore conserva su resolución automática anterior. Las demás fuentes se
+abren mediante una búsqueda restringida al dominio correspondiente para
+encontrar el perfil correcto sin inventar IDs.
+
+Esta versión no importa automáticamente estadísticas de esas páginas dentro
+de la nota Fantasy. Esa integración debe hacerse fuente por fuente porque no
+existe una API pública única y estable compartida por todas ellas.
