@@ -41,8 +41,17 @@ export function normalizarJugador(
     teamId,
     teamName:
       team?.name || "Sin club",
+
     teamSlug:
       team?.slug || "",
+
+    teamIconUrl:
+      team?.iconUrl ||
+      (
+        teamId
+          ? `https://cdn.biwenger.com/i/t/${teamId}.png`
+          : ""
+      ),
     position:
       POSITIONS[Number(player?.position)] ||
       String(player?.position || "?"),

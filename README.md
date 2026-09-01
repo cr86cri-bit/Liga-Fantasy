@@ -393,3 +393,48 @@ También se añadieron:
 El nivel por posición utiliza el `analysis.score` ya existente en Liga Fantasy y
 lo complementa con el ranking dentro de la propia plantilla. No genera nuevas
 llamadas a Biwenger y no afecta a la protección anti-rate-limit.
+
+## Tema visual Cañadores FC
+
+La interfaz completa utiliza ahora la identidad visual de Cañadores FC:
+
+- verde bosque profundo;
+- granate;
+- crema;
+- dorado para estados de excelencia;
+- patrón vertical inspirado en la camiseta;
+- encabezados estilo marcador de estadio;
+- contenedores de esquinas rectas;
+- bordes y sombras duras;
+- detalles de 45° en acciones destacadas.
+
+Assets incluidos:
+
+- `public/brand/canadores-crest.png`
+- `public/brand/canadores-jersey.png`
+
+El header integra el escudo y una referencia visual de la camiseta.
+
+### Escudos de clubes en jugadores
+
+Los jugadores normalizados incluyen ahora `teamIconUrl`.
+
+Se intenta obtener el escudo desde los datos que entrega Biwenger (`iconHero`,
+`icon`, `logo`, `image`, `shield`, `badge` o `crest`). Como segundo intento se
+usa el CDN por ID del club.
+
+Si ninguna imagen carga, la interfaz utiliza automáticamente las iniciales del
+equipo para que el chip nunca quede roto.
+
+Los chips de **Mi equipo**, **Mercado**, **Movimientos** y el selector del
+**Mejor XI** muestran ahora:
+
+- foto del jugador;
+- posición;
+- nombre;
+- escudo del club;
+- nombre del club.
+
+Las imágenes de escudos son recursos estáticos/CDN y no generan nuevas
+peticiones al API `/api/v2`, por lo que no alteran la estrategia
+anti-rate-limit implementada en el backend.

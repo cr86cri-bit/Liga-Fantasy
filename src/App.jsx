@@ -299,6 +299,168 @@ function PlayerPhoto({ player, size = "normal" }) {
   );
 }
 
+function teamInitials(
+  name
+) {
+  const parts =
+    String(
+      name ||
+      "?"
+    )
+      .trim()
+      .split(
+        /\s+/
+      )
+      .filter(Boolean);
+
+  if (
+    !parts.length
+  ) {
+    return "?";
+  }
+
+  return parts
+    .slice(
+      0,
+      2
+    )
+    .map(
+      (part) =>
+        part
+          .charAt(0)
+          .toUpperCase()
+    )
+    .join("");
+}
+
+function TeamCrest({
+  player,
+  size = "small",
+}) {
+  const candidates =
+    useMemo(
+      () =>
+        [
+          player?.teamIconUrl,
+
+          player?.teamId
+            ? `https://cdn.biwenger.com/i/t/${player.teamId}.png`
+            : "",
+        ].filter(
+          (
+            value,
+            index,
+            array
+          ) =>
+            value &&
+            array.indexOf(
+              value
+            ) ===
+              index
+        ),
+      [
+        player?.teamIconUrl,
+        player?.teamId,
+      ]
+    );
+
+  const [
+    candidateIndex,
+    setCandidateIndex,
+  ] =
+    useState(
+      0
+    );
+
+  useEffect(
+    () => {
+      setCandidateIndex(
+        0
+      );
+    },
+    [
+      player?.teamId,
+      player?.teamIconUrl,
+    ]
+  );
+
+  const src =
+    candidates[
+      candidateIndex
+    ];
+
+  if (!src) {
+    return (
+      <span
+        className={`team-crest team-crest-${size} team-crest-fallback`}
+        aria-label={
+          player?.teamName ||
+          "Club"
+        }
+      >
+        {teamInitials(
+          player?.teamName
+        )}
+      </span>
+    );
+  }
+
+  return (
+    <img
+      className={`team-crest team-crest-${size}`}
+      src={
+        src
+      }
+      alt={
+        player?.teamName
+          ? `Escudo de ${player.teamName}`
+          : "Escudo del club"
+      }
+      loading="lazy"
+      onError={() =>
+        setCandidateIndex(
+          (
+            current
+          ) =>
+            current +
+            1
+        )
+      }
+    />
+  );
+}
+
+function ClubIdentity({
+  player,
+  compact = false,
+}) {
+  return (
+    <span
+      className={`club-identity ${
+        compact
+          ? "club-identity-compact"
+          : ""
+      }`}
+    >
+      <TeamCrest
+        player={
+          player
+        }
+        size={
+          compact
+            ? "tiny"
+            : "small"
+        }
+      />
+
+      <span>
+        {player?.teamName ||
+          "Sin club"}
+      </span>
+    </span>
+  );
+}
+
 function Status({ status, compact = false }) {
   const [dot, label, className] = statusConfig(status);
 
@@ -1858,7 +2020,13 @@ function TeamChip({ player, onDetails, onSell }) {
           )}
         </div>
 
-        <span className="chip-club">{player.teamName}</span>
+        <div className="chip-club">
+          <ClubIdentity
+            player={
+              player
+            }
+          />
+        </div>
 
         <div className="chip-stats">
           <span><small>Valor</small><strong>{formatMoney(player.price)}</strong></span>
@@ -1993,9 +2161,12 @@ function MyBidCard({
             </strong>
           </div>
 
-          <span>
-            {bid.teamName}
-          </span>
+          <ClubIdentity
+            player={
+              bid
+            }
+            compact
+          />
         </div>
       </div>
 
@@ -2100,9 +2271,12 @@ function MySaleCard({
             </strong>
           </div>
 
-          <span>
-            {player.teamName}
-          </span>
+          <ClubIdentity
+            player={
+              player
+            }
+            compact
+          />
         </div>
       </div>
 
@@ -2319,7 +2493,12 @@ function MarketChip({ player, onDetails, onBid, now }) {
             <strong>{player.name}</strong>
           </div>
 
-          <span>{player.teamName}</span>
+          <ClubIdentity
+            player={
+              player
+            }
+            compact
+          />
 
           <div className="market-labels">
             <span
@@ -5070,8 +5249,17 @@ const lineupWarnings =
                                 {player.name}
                               </strong>
 
-                              <small>
-                                {player.teamName}
+                              <small className="lineup-option-club">
+                                <TeamCrest
+                                  player={
+                                    player
+                                  }
+                                  size="tiny"
+                                />
+
+                                <span>
+                                  {player.teamName}
+                                </span>
                               </small>
                             </span>
 
@@ -7502,33 +7690,81 @@ const handleManualRefresh =
     <div className="app">
       <Toasts items={toasts} onClose={removeToast} />
 
-      <header className="header">
-        <div>
-          <span className="brand">⚽ LIGA FANTASY</span>
-          <h1>{data?.league?.name || "Mi Liga"}</h1>
-          <p>
-            {data?.user?.name}
-            {data?.user?.position ? ` · #${data.user.position}` : ""}
-          </p>
+      <header className="header canadores-header">
+        <div className="canadores-brand-lockup">
+          <div className="canadores-crest-shell">
+            <img
+              src="/brand/canadores-crest.png"
+              alt="Escudo Cañadores FC"
+              className="canadores-crest"
+            />
+          </div>
+
+          <div className="canadores-brand-copy">
+            <span className="brand">
+              CAÑADORES FC · LIGA FANTASY
+            </span>
+
+            <h1>
+              {data?.league?.name ||
+                "Mi Liga"}
+            </h1>
+
+            <div className="canadores-manager-line">
+              <strong>
+                {data?.user?.name ||
+                  "Cañadores F.C."}
+              </strong>
+
+              {data?.user?.position && (
+                <span>
+                  POSICIÓN #{data.user.position}
+                </span>
+              )}
+            </div>
+
+            <p className="canadores-motto">
+              Cazar puntos. Dominar la liga.
+            </p>
+          </div>
         </div>
 
-        <button
-          className="refresh-button"
-          disabled={
-            refreshing ||
-            manualRefreshRemaining > 0 ||
-            data?.system?.rateLimited
-          }
-          onClick={handleManualRefresh}
-        >
-          {data?.system?.rateLimited
-            ? "Protección activa"
-            : refreshing
-              ? "Actualizando..."
-              : manualRefreshRemaining > 0
-                ? `Actualizar en ${manualRefreshRemaining}s`
-                : "Actualizar datos"}
-        </button>
+        <div className="canadores-header-actions">
+          <div className="canadores-kit-card">
+            <img
+              src="/brand/canadores-jersey.png"
+              alt="Camiseta de Cañadores FC"
+            />
+
+            <div>
+              <span>
+                IDENTIDAD DEL CLUB
+              </span>
+
+              <strong>
+                Verde bosque · Granate · Crema
+              </strong>
+            </div>
+          </div>
+
+          <button
+            className="refresh-button"
+            disabled={
+              refreshing ||
+              manualRefreshRemaining > 0 ||
+              data?.system?.rateLimited
+            }
+            onClick={handleManualRefresh}
+          >
+            {data?.system?.rateLimited
+              ? "Protección activa"
+              : refreshing
+                ? "Actualizando..."
+                : manualRefreshRemaining > 0
+                  ? `Actualizar en ${manualRefreshRemaining}s`
+                  : "Actualizar datos"}
+          </button>
+        </div>
       </header>
 
       {error && <div className="warning">{error}</div>}
