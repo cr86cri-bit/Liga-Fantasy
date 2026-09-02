@@ -549,3 +549,37 @@ Este cambio no añade endpoints ni polling. Las oficinas son imágenes estática
 locales y las interfaces reutilizan el mismo estado y las mismas llamadas que
 ya existían. Se conserva el sistema completo de caché, cola, pestaña líder y
 circuit breaker.
+
+## Oficinas v2: más legibles y con scroll completo
+
+Se corrigió la presentación de las interfaces dentro de los monitores.
+
+### Cambios de legibilidad
+
+- Se eliminó la rotación/perspectiva CSS aplicada al contenedor React porque
+  podía rasterizar las fuentes y hacerlas verse borrosas.
+- Se aumentó el tamaño base de texto dentro del monitor.
+- Encabezados, botones, filtros, métricas, nombres de jugadores y tablas tienen
+  tamaños específicos mayores.
+- El reflejo de cristal del monitor es ahora mucho más tenue.
+
+### Lienzo virtual de escritorio
+
+La interfaz dentro del monitor ya no intenta comprimirse para caber completa.
+Cada oficina utiliza un lienzo de escritorio ancho y el monitor actúa como una
+ventana con:
+
+- scroll vertical;
+- scroll horizontal;
+- barras de scroll más anchas y visibles;
+- soporte táctil para desplazarse en ambas direcciones.
+
+Mercado utiliza un lienzo particularmente ancho para conservar las tarjetas,
+precios, rendimiento y puja máxima sin cortar columnas.
+
+### Monitor
+
+También se amplió ligeramente el área React sobre el monitor de cada render,
+aprovechando mejor la superficie disponible.
+
+Este cambio es exclusivamente visual y no añade peticiones a Biwenger.

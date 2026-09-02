@@ -901,3 +901,551 @@
       520px;
   }
 }
+
+
+/* =========================================================
+   OFICINAS v2 · LEGIBILIDAD, ESCALA Y SCROLL COMPLETO
+   ========================================================= */
+
+/*
+ * La versión anterior aplicaba perspectiva/rotación al monitor.
+ * Eso podía rasterizar el texto en algunos navegadores y hacerlo
+ * ver borroso. La nueva versión mantiene la pantalla recta para
+ * que el navegador pinte las fuentes con máxima nitidez.
+ */
+.office-monitor-shell {
+  transform: none !important;
+  filter: none !important;
+  image-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+/*
+ * El monitor se usa ahora como "ventana" a una interfaz de escritorio
+ * más grande. Así no intentamos encoger toda la página para meterla
+ * dentro de la pantalla: el usuario puede desplazarse horizontal y
+ * verticalmente y leer todo a un tamaño normal.
+ */
+.office-monitor-scroll {
+  overflow: scroll !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+  scroll-behavior: smooth;
+  touch-action: pan-x pan-y;
+}
+
+.office-monitor-scroll::-webkit-scrollbar {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+.office-monitor-scroll::-webkit-scrollbar-track {
+  background: #04140e !important;
+}
+
+.office-monitor-scroll::-webkit-scrollbar-thumb {
+  min-height: 46px;
+  border: 2px solid #04140e;
+  background: #8b1232 !important;
+}
+
+.office-monitor-scroll::-webkit-scrollbar-corner {
+  background: #04140e;
+}
+
+/*
+ * Lienzo interno del monitor.
+ * 1240 px permite que Mercado y Protección conserven sus columnas
+ * completas. En lugar de reducirlas, aparece scroll horizontal.
+ */
+.office-monitor-page {
+  width: max-content;
+  min-width: 1240px !important;
+  min-height: 100%;
+  padding: 20px 22px 30px !important;
+  box-sizing: border-box;
+}
+
+/*
+ * Cada pantalla principal puede ocupar el ancho completo del lienzo
+ * virtual. Así evitamos columnas comprimidas y botones cortados.
+ */
+.office-monitor-page > main,
+.office-monitor-page > section {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0;
+  margin: 0 !important;
+}
+
+/* =========================================================
+   FUENTES MÁS GRANDES Y NÍTIDAS
+   ========================================================= */
+
+.office-monitor-viewport,
+.office-monitor-page {
+  font-size: 14px !important;
+  line-height: 1.42;
+}
+
+.office-monitor-nav {
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 54px !important;
+}
+
+.office-monitor-viewport {
+  grid-template-rows:
+    54px
+    minmax(0, 1fr) !important;
+}
+
+.office-monitor-brand {
+  height: 40px !important;
+}
+
+.office-monitor-brand img {
+  width: 36px !important;
+  height: 36px !important;
+}
+
+.office-monitor-brand strong {
+  font-size: 12px !important;
+}
+
+.office-monitor-brand small {
+  font-size: 7px !important;
+}
+
+.office-monitor-tabs button {
+  min-height: 38px !important;
+  padding: 0 11px !important;
+  font-size: 10px !important;
+}
+
+.office-monitor-tabs button span {
+  font-size: 11px !important;
+}
+
+.office-monitor-api {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 12px !important;
+}
+
+/* Encabezados */
+.office-monitor-page .section-label {
+  font-size: 10px !important;
+}
+
+.office-monitor-page .section-header h2,
+.office-monitor-page .xi-topbar h2 {
+  font-size: 31px !important;
+  line-height: 1.08;
+}
+
+.office-monitor-page .section-header p,
+.office-monitor-page .xi-topbar p {
+  font-size: 13px !important;
+  line-height: 1.5;
+}
+
+/* Texto general y controles */
+.office-monitor-page button,
+.office-monitor-page input,
+.office-monitor-page select,
+.office-monitor-page textarea {
+  font-size: 13px !important;
+}
+
+.office-monitor-page small {
+  font-size: 11px;
+}
+
+/* =========================================================
+   MI EQUIPO
+   ========================================================= */
+
+.office-monitor-page .team-chip-grid {
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(340px, 1fr)
+    ) !important;
+  gap: 12px !important;
+}
+
+.office-monitor-page .player-chip {
+  min-height: 150px !important;
+  padding: 13px !important;
+}
+
+.office-monitor-page .chip-name strong,
+.office-monitor-page .my-market-move-name strong {
+  font-size: 17px !important;
+}
+
+.office-monitor-page .chip-club,
+.office-monitor-page .club-identity {
+  font-size: 13px !important;
+}
+
+.office-monitor-page .chip-stats small {
+  font-size: 10px !important;
+}
+
+.office-monitor-page .chip-stats strong {
+  font-size: 14px !important;
+}
+
+/* =========================================================
+   MERCADO
+   ========================================================= */
+
+/*
+ * Mercado necesitaba especialmente más ancho. La tarjeta ya no intenta
+ * comprimirse dentro del monitor: conserva columnas grandes y se desplaza.
+ */
+.office-scene-market .office-monitor-page {
+  min-width: 1420px !important;
+}
+
+.office-monitor-page .market-list-v2 {
+  gap: 11px !important;
+}
+
+.office-monitor-page .market-chip {
+  min-width: 1320px;
+  min-height: 165px !important;
+  padding: 14px 16px !important;
+  column-gap: 14px !important;
+}
+
+.office-monitor-page .market-chip strong {
+  font-size: 14px;
+}
+
+.office-monitor-page .market-chip-name strong {
+  font-size: 18px !important;
+}
+
+.office-monitor-page .market-chip-stats span {
+  font-size: 10px !important;
+}
+
+.office-monitor-page .market-chip-stats strong {
+  font-size: 15px !important;
+}
+
+.office-monitor-page .market-filter-controls,
+.office-monitor-page .market-filters {
+  gap: 8px;
+}
+
+.office-monitor-page .market-filters button,
+.office-monitor-page .market-position-filter-button {
+  min-height: 48px !important;
+  padding-inline: 15px !important;
+  font-size: 13px !important;
+}
+
+.office-monitor-page .market-status-card,
+.office-monitor-page .market-status-summary,
+.office-monitor-page .notification-button,
+.office-monitor-page .notification-history-button {
+  min-height: 92px !important;
+}
+
+.office-monitor-page .market-status-countdown strong {
+  font-size: 31px !important;
+}
+
+.office-monitor-page .market-status-card span,
+.office-monitor-page .market-status-summary span,
+.office-monitor-page .notification-button span,
+.office-monitor-page .notification-history-button span {
+  font-size: 11px !important;
+}
+
+/* =========================================================
+   MOVIMIENTOS
+   ========================================================= */
+
+.office-scene-moves .office-monitor-page {
+  min-width: 1280px !important;
+}
+
+.office-monitor-page .my-market-activity {
+  padding: 15px !important;
+}
+
+.office-monitor-page .my-market-activity-head h3 {
+  font-size: 23px !important;
+}
+
+.office-monitor-page .my-market-activity-head p {
+  font-size: 13px !important;
+}
+
+.office-monitor-page .my-market-activity-grid {
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(540px, 1fr)
+    ) !important;
+  gap: 11px !important;
+}
+
+.office-monitor-page .my-market-move-card {
+  min-height: 240px;
+  padding: 14px !important;
+}
+
+.office-monitor-page .my-market-move-metrics span {
+  font-size: 10px !important;
+}
+
+.office-monitor-page .my-market-move-metrics strong {
+  font-size: 15px !important;
+}
+
+.office-monitor-page .bid-recommendation-status strong {
+  font-size: 13px !important;
+}
+
+.office-monitor-page .bid-recommendation-status small {
+  font-size: 11px !important;
+}
+
+/* =========================================================
+   MEJOR XI
+   ========================================================= */
+
+.office-scene-xi .office-monitor-page {
+  min-width: 1280px !important;
+}
+
+.office-monitor-page .football-pitch {
+  min-width: 1100px;
+  min-height: 760px !important;
+}
+
+.office-monitor-page .pitch-player > strong {
+  font-size: 12px !important;
+}
+
+.office-monitor-page .pitch-player > .pitch-points {
+  font-size: 10px !important;
+}
+
+.office-monitor-page .pitch-quality,
+.office-monitor-page .pitch-availability {
+  font-size: 8px !important;
+}
+
+.office-monitor-page .pitch-slot-label {
+  font-size: 8px !important;
+}
+
+.office-monitor-page .lineup-player-pool {
+  padding: 15px !important;
+}
+
+.office-monitor-page .lineup-player-option strong {
+  font-size: 13px !important;
+}
+
+.office-monitor-page .lineup-player-option small {
+  font-size: 11px !important;
+}
+
+/* =========================================================
+   RIVALES
+   ========================================================= */
+
+.office-scene-rivals .office-monitor-page {
+  min-width: 1260px !important;
+}
+
+.office-monitor-page .rivals-table {
+  min-width: 1120px;
+  font-size: 13px !important;
+}
+
+.office-monitor-page .rivals-table th,
+.office-monitor-page .rivals-table td {
+  padding: 12px 13px !important;
+}
+
+/* =========================================================
+   PROTECCIÓN
+   ========================================================= */
+
+.office-scene-protection .office-monitor-page {
+  min-width: 1360px !important;
+}
+
+.office-monitor-page .api-protection-panel {
+  padding: 16px !important;
+}
+
+.office-monitor-page .api-protection-metrics {
+  gap: 10px !important;
+}
+
+.office-monitor-page .api-protection-metrics > div {
+  min-height: 105px;
+  padding: 13px !important;
+}
+
+.office-monitor-page .api-protection-metrics span,
+.office-monitor-page .api-next-refresh span {
+  font-size: 10px !important;
+}
+
+.office-monitor-page .api-protection-metrics strong {
+  font-size: 25px !important;
+}
+
+.office-monitor-page .protection-info-grid {
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(360px, 1fr)
+    ) !important;
+  gap: 12px !important;
+}
+
+.office-monitor-page .protection-info-grid article {
+  min-height: 130px;
+  padding: 14px !important;
+}
+
+.office-monitor-page .protection-info-grid strong {
+  font-size: 15px !important;
+}
+
+.office-monitor-page .protection-info-grid p {
+  font-size: 12px !important;
+}
+
+/* =========================================================
+   MONITOR MÁS GRANDE DENTRO DE LA OFICINA
+   ========================================================= */
+
+/*
+ * Aprovechamos más área del monitor de los renders y dejamos menos marco
+ * negro alrededor. El contenido gana aproximadamente un 10–14 % de tamaño.
+ */
+.office-scene-team .office-monitor-shell {
+  left: 19.2% !important;
+  top: 8.3% !important;
+  width: 56.7% !important;
+  height: 70.8% !important;
+}
+
+.office-scene-market .office-monitor-shell {
+  left: 18.1% !important;
+  top: 7.7% !important;
+  width: 57.9% !important;
+  height: 71.7% !important;
+}
+
+.office-scene-moves .office-monitor-shell {
+  left: 19.4% !important;
+  top: 8.1% !important;
+  width: 56.9% !important;
+  height: 71.2% !important;
+}
+
+.office-scene-xi .office-monitor-shell {
+  left: 18.9% !important;
+  top: 8.0% !important;
+  width: 57.3% !important;
+  height: 71.7% !important;
+}
+
+.office-scene-rivals .office-monitor-shell {
+  left: 19.0% !important;
+  top: 7.6% !important;
+  width: 58.0% !important;
+  height: 72.1% !important;
+}
+
+.office-scene-protection .office-monitor-shell {
+  left: 18.8% !important;
+  top: 7.8% !important;
+  width: 57.7% !important;
+  height: 71.9% !important;
+}
+
+/*
+ * El reflejo se hace mucho más tenue para no degradar contraste
+ * ni dar sensación de texto borroso.
+ */
+.office-monitor-glass {
+  opacity: 0.18 !important;
+  mix-blend-mode: normal !important;
+}
+
+/* =========================================================
+   TABLET / MÓVIL
+   ========================================================= */
+
+@media (max-width: 1180px) {
+  .office-monitor-page {
+    min-width: 1080px !important;
+  }
+
+  .office-scene-market .office-monitor-page,
+  .office-scene-protection .office-monitor-page,
+  .office-scene-rivals .office-monitor-page,
+  .office-scene-moves .office-monitor-page,
+  .office-scene-xi .office-monitor-page {
+    min-width: 1080px !important;
+  }
+
+  .office-monitor-viewport {
+    grid-template-rows:
+      58px
+      minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  /*
+   * En móvil seguimos usando scroll local; no reducimos el texto
+   * a tamaños diminutos. Así sigue siendo legible con zoom normal.
+   */
+  .office-monitor-page,
+  .office-scene-market .office-monitor-page,
+  .office-scene-protection .office-monitor-page,
+  .office-scene-rivals .office-monitor-page,
+  .office-scene-moves .office-monitor-page,
+  .office-scene-xi .office-monitor-page {
+    min-width: 980px !important;
+    padding: 14px !important;
+  }
+
+  .office-monitor-page .section-header h2,
+  .office-monitor-page .xi-topbar h2 {
+    font-size: 27px !important;
+  }
+
+  .office-monitor-page .team-chip-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(360px, 1fr)
+      ) !important;
+  }
+
+  .office-monitor-page .protection-info-grid {
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(300px, 1fr)
+      ) !important;
+  }
+}
