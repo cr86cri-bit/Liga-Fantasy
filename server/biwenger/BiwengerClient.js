@@ -1727,6 +1727,161 @@ const marketMeta =
           }
         );
 
+
+/*
+ * MIS PUJAS + RECOMENDACIÓN MÁXIMA
+ *
+ * Las pujas activas nacen de data.offers de GET /market.
+ * Aquí les adjuntamos el mismo marketIntelligence que usamos
+ * en Mercado, por lo que Movimientos puede mostrar la puja
+ * máxima recomendada sin realizar ninguna llamada adicional.
+ */
+const enrichedMarketByPlayerId =
+  new Map(
+    (
+      market ||
+      []
+    ).map(
+      (player) => [
+        Number(
+          player.id
+        ),
+        player,
+      ]
+    )
+  );
+
+const myBidsWithRecommendation =
+  (
+    myBids ||
+    []
+  ).map(
+    (bid) => {
+      const enriched =
+        enrichedMarketByPlayerId.get(
+          Number(
+            bid.id
+          )
+        );
+
+      if (enriched) {
+        const recommendedMaxBid =
+          Number(
+            enriched
+              ?.marketIntelligence
+              ?.recommendedMaxBid ||
+            0
+          );
+
+        const currentOffer =
+          Number(
+            bid.offerAmount ||
+            0
+          );
+
+        return {
+          ...bid,
+
+          analysis:
+            enriched.analysis ||
+            bid.analysis,
+
+          nextMatch:
+            enriched.nextMatch ||
+            bid.nextMatch,
+
+          marketIntelligence:
+            enriched.marketIntelligence ||
+            null,
+
+          bidRecommendation: {
+            recommendedMaxBid,
+
+            currentOffer,
+
+            difference:
+              recommendedMaxBid -
+              currentOffer,
+
+            withinRecommendation:
+              recommendedMaxBid >
+                0 &&
+              currentOffer <=
+                recommendedMaxBid,
+
+            exceedsRecommendation:
+              recommendedMaxBid >
+                0 &&
+              currentOffer >
+                recommendedMaxBid,
+          },
+        };
+      }
+
+      /*
+       * Fallback defensivo por si una puja sigue en data.offers
+       * pero su listing ya no está presente en rawMarket.
+       */
+      const fallback =
+        enriquecerMercado(
+          [
+            bid,
+          ],
+          rivals,
+          finances
+        )[0] ||
+        bid;
+
+      const recommendedMaxBid =
+        Number(
+          fallback
+            ?.marketIntelligence
+            ?.recommendedMaxBid ||
+          0
+        );
+
+      const currentOffer =
+        Number(
+          bid.offerAmount ||
+          0
+        );
+
+      return {
+        ...bid,
+
+        analysis:
+          fallback.analysis ||
+          bid.analysis,
+
+        marketIntelligence:
+          fallback.marketIntelligence ||
+          null,
+
+        bidRecommendation: {
+          recommendedMaxBid,
+
+          currentOffer,
+
+          difference:
+            recommendedMaxBid -
+            currentOffer,
+
+          withinRecommendation:
+            recommendedMaxBid >
+              0 &&
+            currentOffer <=
+              recommendedMaxBid,
+
+          exceedsRecommendation:
+            recommendedMaxBid >
+              0 &&
+            currentOffer >
+              recommendedMaxBid,
+        },
+      };
+    }
+  );
+
       /*
        * Los jugadores puestos a la venta siguen perteneciendo
        * a la plantilla hasta que se complete una venta, pero
@@ -1886,7 +2041,10 @@ const marketMeta =
 
         market,
         marketMeta,
-        myBids,
+
+        myBids:
+          myBidsWithRecommendation,
+
         bestXI,
         lineup,
         rivals,

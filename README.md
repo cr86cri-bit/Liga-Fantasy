@@ -438,3 +438,24 @@ Los chips de **Mi equipo**, **Mercado**, **Movimientos** y el selector del
 Las imágenes de escudos son recursos estáticos/CDN y no generan nuevas
 peticiones al API `/api/v2`, por lo que no alteran la estrategia
 anti-rate-limit implementada en el backend.
+
+## Movimientos: puja máxima recomendada
+
+Las tarjetas de **Mis pujas** muestran ahora:
+
+- importe que ya has pujado;
+- **puja máxima recomendada** por Liga Fantasy;
+- valor actual del jugador;
+- margen restante hasta la recomendación;
+- aviso si la puja actual ya supera el máximo recomendado.
+
+La recomendación reutiliza exactamente el mismo
+`marketIntelligence.recommendedMaxBid` del módulo Mercado. Considera el valor,
+la nota del análisis, tendencia de precio, dificultad del próximo partido,
+estado del jugador y competencia estimada.
+
+No se realiza ninguna llamada adicional a Biwenger: el cálculo se aplica a los
+datos de `GET /market` que ya estaban cargados.
+
+La cifra es una recomendación analítica de Liga Fantasy, no un límite oficial
+de Biwenger ni una garantía de adjudicación.

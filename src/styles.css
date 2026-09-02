@@ -6615,3 +6615,200 @@ textarea:focus {
     padding: 0 13px;
   }
 }
+
+
+/* =========================================================
+   MOVIMIENTOS · PUJA MÁXIMA RECOMENDADA
+   ========================================================= */
+
+.my-bid-metrics {
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+}
+
+.my-bid-metrics
+  .recommended-bid-metric {
+  border-left-color:
+    var(
+      --ca-gold,
+      #d4af37
+    );
+  background:
+    linear-gradient(
+      145deg,
+      rgba(212, 175, 55, 0.12),
+      rgba(6, 44, 30, 0.34)
+    );
+}
+
+.my-bid-metrics
+  .recommended-bid-metric
+  span {
+  color:
+    var(
+      --ca-gold-soft,
+      #e9c349
+    );
+}
+
+.my-bid-metrics
+  .recommended-bid-metric
+  strong {
+  color:
+    var(
+      --ca-cream,
+      #f2e7bd
+    );
+}
+
+.bid-recommendation-status {
+  display: grid;
+  grid-template-columns:
+    28px
+    minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 9px;
+  border: 1px solid;
+  background:
+    rgba(
+      8,
+      30,
+      17,
+      0.72
+    );
+}
+
+.bid-recommendation-status
+  > span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background:
+    rgba(
+      112,
+      201,
+      142,
+      0.15
+    );
+  color:
+    #8be4a8;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.bid-recommendation-status
+  strong,
+.bid-recommendation-status
+  small {
+  display: block;
+}
+
+.bid-recommendation-status
+  strong {
+  color:
+    #bff0cf;
+  font-size: 9px;
+}
+
+.bid-recommendation-status
+  small {
+  margin-top: 2px;
+  color:
+    #799187;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.bid-recommendation-status.within {
+  border-color:
+    rgba(
+      112,
+      201,
+      142,
+      0.42
+    );
+}
+
+.bid-recommendation-status.over {
+  border-color:
+    rgba(
+      164,
+      31,
+      61,
+      0.72
+    );
+  background:
+    rgba(
+      71,
+      17,
+      29,
+      0.68
+    );
+}
+
+.bid-recommendation-status.over
+  > span {
+  background:
+    rgba(
+      164,
+      31,
+      61,
+      0.25
+    );
+  color:
+    #ffabbc;
+}
+
+.bid-recommendation-status.over
+  strong {
+  color:
+    #ffc4cf;
+}
+
+.bid-recommendation-status.over
+  small {
+  color:
+    #c6919b;
+}
+
+.my-bid-over-recommended {
+  border-color:
+    rgba(
+      164,
+      31,
+      61,
+      0.72
+    ) !important;
+}
+
+.recommended-bid-disclaimer {
+  margin: 0;
+  padding-top: 6px;
+  border-top:
+    1px solid
+    rgba(
+      242,
+      231,
+      189,
+      0.10
+    );
+  color:
+    #6f7f77;
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+@media (
+  max-width:
+    900px
+) {
+  .my-bid-metrics {
+    grid-template-columns:
+      1fr;
+  }
+}

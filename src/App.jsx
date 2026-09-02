@@ -2140,11 +2140,57 @@ function MyBidCard({
       bid.offerStatus
     );
 
+  const recommendedMaxBid =
+    Number(
+      bid
+        ?.bidRecommendation
+        ?.recommendedMaxBid ||
+      bid
+        ?.marketIntelligence
+        ?.recommendedMaxBid ||
+      0
+    );
+
+  const currentOffer =
+    Number(
+      bid.offerAmount ||
+      0
+    );
+
+  const bidDifference =
+    recommendedMaxBid -
+    currentOffer;
+
+  const hasRecommendation =
+    recommendedMaxBid >
+    0;
+
+  const exceedsRecommendation =
+    hasRecommendation &&
+    currentOffer >
+    recommendedMaxBid;
+
+  const remainingRecommendedRoom =
+    hasRecommendation
+      ? Math.max(
+          0,
+          bidDifference
+        )
+      : 0;
+
   return (
-    <article className="my-market-move-card my-bid-card">
+    <article
+      className={`my-market-move-card my-bid-card ${
+        exceedsRecommendation
+          ? "my-bid-over-recommended"
+          : ""
+      }`}
+    >
       <div className="my-market-move-main">
         <PlayerPhoto
-          player={bid}
+          player={
+            bid
+          }
           size="chip"
         />
 
@@ -2185,7 +2231,7 @@ function MyBidCard({
         </span>
       </div>
 
-      <div className="my-market-move-metrics">
+      <div className="my-market-move-metrics my-bid-metrics">
         <div>
           <span>
             Tu oferta
@@ -2193,14 +2239,28 @@ function MyBidCard({
 
           <strong>
             {formatMoney(
-              bid.offerAmount
+              currentOffer
             )}
+          </strong>
+        </div>
+
+        <div className="recommended-bid-metric">
+          <span>
+            Puja máxima recomendada
+          </span>
+
+          <strong>
+            {hasRecommendation
+              ? formatMoney(
+                  recommendedMaxBid
+                )
+              : "Sin cálculo"}
           </strong>
         </div>
 
         <div>
           <span>
-            Valor
+            Valor actual
           </span>
 
           <strong>
@@ -2210,6 +2270,45 @@ function MyBidCard({
           </strong>
         </div>
       </div>
+
+      {hasRecommendation && (
+        <div
+          className={`bid-recommendation-status ${
+            exceedsRecommendation
+              ? "over"
+              : "within"
+          }`}
+        >
+          <span>
+            {exceedsRecommendation
+              ? "⚠"
+              : "✓"}
+          </span>
+
+          <div>
+            <strong>
+              {exceedsRecommendation
+                ? "Tu puja supera nuestra recomendación"
+                : "Tu puja está dentro del límite recomendado"}
+            </strong>
+
+            <small>
+              {exceedsRecommendation
+                ? `Supera la recomendación en ${formatMoney(
+                    Math.abs(
+                      bidDifference
+                    )
+                  )}.`
+                : remainingRecommendedRoom >
+                    0
+                  ? `Aún tendrías un margen recomendado de ${formatMoney(
+                      remainingRecommendedRoom
+                    )}.`
+                  : "Estás justo en la puja máxima que recomendamos."}
+            </small>
+          </div>
+        </div>
+      )}
 
       <div className="my-market-move-bottom">
         <div>
@@ -2239,6 +2338,11 @@ function MyBidCard({
           }
         />
       </div>
+
+      <p className="recommended-bid-disclaimer">
+        Puja máxima recomendada por el análisis de Liga Fantasy;
+        no es un límite oficial de Biwenger.
+      </p>
     </article>
   );
 }
