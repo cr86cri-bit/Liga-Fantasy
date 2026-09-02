@@ -1,0 +1,903 @@
+/* =========================================================
+   CAÑADORES FC · OFICINAS INTERACTIVAS
+   ========================================================= */
+
+.app-office-mode {
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background:
+    #070907;
+}
+
+.office-scene {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 50% 28%,
+      #26372d 0,
+      #0b110e 46%,
+      #050605 100%
+    );
+}
+
+.office-stage {
+  position: relative;
+  width: min(
+    100vw,
+    1920px
+  );
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #090a09;
+  box-shadow:
+    0 0 80px
+    rgba(
+      0,
+      0,
+      0,
+      0.72
+    );
+}
+
+.office-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  user-select: none;
+  pointer-events: none;
+}
+
+.office-room-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.10),
+      transparent 22%,
+      transparent 76%,
+      rgba(0, 0, 0, 0.18)
+    );
+}
+
+.office-campus-button {
+  position: absolute;
+  z-index: 30;
+  left: 1.25%;
+  top: 2%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 116px;
+  min-height: 46px;
+  padding: 7px 12px;
+  border: 1px solid
+    rgba(
+      242,
+      231,
+      189,
+      0.46
+    );
+  background:
+    rgba(
+      3,
+      20,
+      14,
+      0.86
+    );
+  color: #f2e7bd;
+  box-shadow:
+    0 8px 28px
+    rgba(
+      0,
+      0,
+      0,
+      0.38
+    );
+  backdrop-filter:
+    blur(12px);
+  cursor: pointer;
+}
+
+.office-campus-button:hover {
+  border-color:
+    #d4af37;
+  background:
+    rgba(
+      88,
+      9,
+      30,
+      0.90
+    );
+}
+
+.office-campus-button > span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border:
+    1px solid
+    rgba(
+      212,
+      175,
+      55,
+      0.46
+    );
+  font-size: 16px;
+}
+
+.office-campus-button small,
+.office-campus-button strong {
+  display: block;
+  text-align: left;
+}
+
+.office-campus-button small {
+  color:
+    #c9b46b;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.office-campus-button strong {
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+.office-room-label {
+  position: absolute;
+  z-index: 20;
+  right: 1.6%;
+  top: 2.2%;
+  min-width: 180px;
+  padding: 8px 11px;
+  border-right:
+    3px solid
+    #d4af37;
+  background:
+    rgba(
+      4,
+      22,
+      15,
+      0.74
+    );
+  color:
+    #f2e7bd;
+  text-align: right;
+  backdrop-filter:
+    blur(10px);
+}
+
+.office-room-label span,
+.office-room-label strong,
+.office-room-label small {
+  display: block;
+}
+
+.office-room-label span {
+  color:
+    #d4af37;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+}
+
+.office-room-label strong {
+  margin-top: 3px;
+  font-size: 12px;
+}
+
+.office-room-label small {
+  margin-top: 2px;
+  color:
+    rgba(
+      242,
+      231,
+      189,
+      0.62
+    );
+  font-size: 8px;
+}
+
+.office-monitor-shell {
+  position: absolute;
+  z-index: 12;
+  left:
+    var(
+      --monitor-left
+    );
+  top:
+    var(
+      --monitor-top
+    );
+  width:
+    var(
+      --monitor-width
+    );
+  height:
+    var(
+      --monitor-height
+    );
+  transform:
+    perspective(
+      1800px
+    )
+    rotate(
+      var(
+        --monitor-rotate
+      )
+    );
+  transform-origin:
+    center center;
+  filter:
+    drop-shadow(
+      0 9px 20px
+      rgba(
+        0,
+        0,
+        0,
+        0.36
+      )
+    );
+}
+
+.office-monitor-viewport {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows:
+    42px
+    minmax(
+      0,
+      1fr
+    );
+  overflow: hidden;
+  border:
+    1px solid
+    rgba(
+      212,
+      175,
+      55,
+      0.38
+    );
+  border-radius:
+    7px;
+  background:
+    #061c14;
+  box-shadow:
+    inset
+    0 0 0 1px
+    rgba(
+      255,
+      255,
+      255,
+      0.035
+    ),
+    inset
+    0 0 42px
+    rgba(
+      0,
+      0,
+      0,
+      0.27
+    );
+}
+
+.office-monitor-nav {
+  position: relative;
+  z-index: 8;
+  display: grid;
+  grid-template-columns:
+    156px
+    minmax(
+      0,
+      1fr
+    )
+    27px;
+  align-items: center;
+  gap: 8px;
+  padding:
+    5px 7px;
+  border-bottom:
+    1px solid
+    rgba(
+      212,
+      175,
+      55,
+      0.32
+    );
+  background:
+    linear-gradient(
+      90deg,
+      #063323,
+      #03261a
+    );
+}
+
+.office-monitor-brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background:
+    transparent;
+  color:
+    #f2e7bd;
+  cursor: pointer;
+}
+
+.office-monitor-brand img {
+  width: 29px;
+  height: 29px;
+  object-fit:
+    contain;
+}
+
+.office-monitor-brand span,
+.office-monitor-brand strong,
+.office-monitor-brand small {
+  display: block;
+}
+
+.office-monitor-brand strong {
+  font-size: 9px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.office-monitor-brand small {
+  margin-top: 2px;
+  color:
+    #d4af37;
+  font-size: 5px;
+  font-weight: 900;
+  letter-spacing:
+    0.09em;
+}
+
+.office-monitor-tabs {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content:
+    center;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width:
+    none;
+}
+
+.office-monitor-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.office-monitor-tabs button {
+  flex: 0 0 auto;
+  min-height: 29px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 7px;
+  border:
+    1px solid
+    transparent;
+  background:
+    transparent;
+  color:
+    #dbddd4;
+  cursor: pointer;
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.office-monitor-tabs button:hover {
+  border-color:
+    rgba(
+      212,
+      175,
+      55,
+      0.38
+    );
+  color:
+    #f2e7bd;
+}
+
+.office-monitor-tabs button.active {
+  border-color:
+    #d7c58b;
+  background:
+    #f2e7bd;
+  color:
+    #2e2418;
+}
+
+.office-monitor-tabs button span {
+  font-size: 8px;
+}
+
+.office-monitor-tabs button b {
+  font-size: inherit;
+}
+
+.office-monitor-api {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border:
+    1px solid;
+  border-radius:
+    50%;
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.office-monitor-api.safe {
+  border-color:
+    #61ad79;
+  color:
+    #8ce4a8;
+}
+
+.office-monitor-api.limited {
+  border-color:
+    #b84c59;
+  color:
+    #ff9ea8;
+}
+
+.office-monitor-scroll {
+  min-height: 0;
+  overflow:
+    auto;
+  overscroll-behavior:
+    contain;
+  background:
+    linear-gradient(
+      145deg,
+      #071f16,
+      #081810
+    );
+  scrollbar-width:
+    thin;
+  scrollbar-color:
+    #800020
+    #06150f;
+}
+
+.office-monitor-scroll::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.office-monitor-scroll::-webkit-scrollbar-track {
+  background:
+    #06150f;
+}
+
+.office-monitor-scroll::-webkit-scrollbar-thumb {
+  background:
+    #800020;
+}
+
+.office-monitor-page {
+  min-height: 100%;
+  padding: 12px;
+}
+
+.office-monitor-page > main {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+ * Dentro del monitor reducimos únicamente densidad visual.
+ * Las funciones y componentes son exactamente los mismos.
+ */
+.office-monitor-page
+  .section-header {
+  margin-bottom: 9px;
+  padding-bottom: 7px;
+}
+
+.office-monitor-page
+  .section-header h2,
+.office-monitor-page
+  .xi-topbar h2 {
+  font-size:
+    20px;
+}
+
+.office-monitor-page
+  .section-header p,
+.office-monitor-page
+  .xi-topbar p {
+  font-size:
+    9px;
+}
+
+.office-monitor-page
+  .section-label {
+  font-size:
+    7px;
+}
+
+.office-monitor-page
+  .team-chip-grid {
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(
+        0,
+        1fr
+      )
+    );
+  gap: 7px;
+}
+
+.office-monitor-page
+  .player-chip {
+  min-height: 0;
+  padding: 8px;
+}
+
+.office-monitor-page
+  .market-list-v2 {
+  gap: 6px;
+}
+
+.office-monitor-page
+  .market-chip {
+  padding: 8px;
+}
+
+.office-monitor-page
+  .market-chip-stats strong,
+.office-monitor-page
+  .chip-stats strong {
+  font-size:
+    10px;
+}
+
+.office-monitor-page
+  .market-chip-stats span,
+.office-monitor-page
+  .chip-stats small {
+  font-size:
+    6px;
+}
+
+.office-monitor-page
+  .market-status-card,
+.office-monitor-page
+  .market-status-summary,
+.office-monitor-page
+  .notification-button,
+.office-monitor-page
+  .notification-history-button {
+  min-height: 55px;
+}
+
+.office-monitor-page
+  .my-market-activity {
+  margin-bottom: 8px;
+  padding: 9px;
+}
+
+.office-monitor-page
+  .my-market-activity-grid {
+  gap: 6px;
+}
+
+.office-monitor-page
+  .my-market-move-card {
+  padding: 8px;
+}
+
+.office-monitor-page
+  .football-pitch {
+  min-height:
+    560px;
+}
+
+.office-monitor-page
+  .lineup-player-pool {
+  padding: 9px;
+}
+
+.office-monitor-page
+  .api-protection-panel {
+  padding: 10px;
+}
+
+.office-monitor-page
+  .api-protection-metrics {
+  gap: 6px;
+}
+
+.office-monitor-page
+  .protection-info-grid {
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(
+        0,
+        1fr
+      )
+    );
+  gap: 7px;
+}
+
+.office-monitor-page
+  .rivals-table {
+  font-size:
+    8px;
+}
+
+.office-monitor-glass {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border-radius:
+    7px;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      116deg,
+      rgba(
+        255,
+        255,
+        255,
+        0.045
+      ),
+      transparent 20%,
+      transparent 72%,
+      rgba(
+        255,
+        255,
+        255,
+        0.025
+      )
+    );
+  mix-blend-mode:
+    screen;
+}
+
+.office-screen-hint {
+  position: absolute;
+  z-index: 22;
+  right: 1.5%;
+  bottom: 1.8%;
+  padding:
+    6px 9px;
+  border-left:
+    2px solid
+    #d4af37;
+  background:
+    rgba(
+      0,
+      0,
+      0,
+      0.48
+    );
+  color:
+    #f2e7bd;
+  backdrop-filter:
+    blur(7px);
+}
+
+.office-screen-hint span,
+.office-screen-hint strong {
+  display: block;
+}
+
+.office-screen-hint span {
+  color:
+    #d4af37;
+  font-size: 6px;
+  font-weight: 950;
+  letter-spacing:
+    0.12em;
+}
+
+.office-screen-hint strong {
+  margin-top: 2px;
+  font-size: 8px;
+}
+
+/* Monitor un poco más compacto en la vista de Mercado
+   que usa el render que el usuario eligió como referencia. */
+.office-scene-market
+  .office-monitor-page {
+  padding: 10px;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (
+  max-width:
+    1180px
+) {
+  .office-stage {
+    width: 100vw;
+    height: 100vh;
+    aspect-ratio: auto;
+  }
+
+  .office-background {
+    object-fit: cover;
+    opacity: 0.42;
+    filter:
+      blur(2px)
+      saturate(0.85);
+    transform:
+      scale(1.03);
+  }
+
+  .office-room-shade {
+    background:
+      rgba(
+        3,
+        10,
+        7,
+        0.48
+      );
+  }
+
+  .office-monitor-shell {
+    left: 16px !important;
+    right: 16px;
+    top: 76px !important;
+    bottom: 16px;
+    width: auto !important;
+    height: auto !important;
+    transform: none;
+  }
+
+  .office-monitor-viewport {
+    border-radius:
+      10px;
+    box-shadow:
+      0 18px 52px
+      rgba(
+        0,
+        0,
+        0,
+        0.58
+      );
+  }
+
+  .office-room-label,
+  .office-screen-hint {
+    display: none;
+  }
+
+  .office-campus-button {
+    left: 12px;
+    top: 12px;
+  }
+
+  .office-monitor-page
+    .team-chip-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(
+          0,
+          1fr
+        )
+      );
+  }
+}
+
+@media (
+  max-width:
+    700px
+) {
+  .office-monitor-shell {
+    left: 6px !important;
+    right: 6px;
+    top: 64px !important;
+    bottom: 6px;
+  }
+
+  .office-campus-button {
+    min-width: 98px;
+    min-height: 40px;
+    padding: 5px 8px;
+  }
+
+  .office-monitor-viewport {
+    grid-template-rows:
+      39px
+      minmax(
+        0,
+        1fr
+      );
+  }
+
+  .office-monitor-nav {
+    grid-template-columns:
+      36px
+      minmax(
+        0,
+        1fr
+      )
+      24px;
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .office-monitor-brand {
+    width: 32px;
+  }
+
+  .office-monitor-brand img {
+    width: 27px;
+    height: 27px;
+  }
+
+  .office-monitor-brand span {
+    display: none;
+  }
+
+  .office-monitor-tabs {
+    justify-content:
+      flex-start;
+  }
+
+  .office-monitor-tabs button {
+    min-height: 27px;
+    padding: 0 6px;
+  }
+
+  .office-monitor-tabs button b {
+    display: none;
+  }
+
+  .office-monitor-tabs button span {
+    font-size: 10px;
+  }
+
+  .office-monitor-page {
+    padding: 8px;
+  }
+
+  .office-monitor-page
+    .team-chip-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .office-monitor-page
+    .protection-info-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .office-monitor-page
+    .football-pitch {
+    min-height:
+      520px;
+  }
+}

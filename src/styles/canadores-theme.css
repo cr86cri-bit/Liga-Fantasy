@@ -1173,3 +1173,31 @@ textarea:focus {
       1fr;
   }
 }
+
+
+/* Aviso flotante cuando una oficina está abierta. */
+.office-warning {
+  position: fixed;
+  z-index: 7000;
+  left: 50%;
+  top: 10px;
+  width: min(
+    620px,
+    calc(
+      100% - 30px
+    )
+  );
+  transform:
+    translateX(
+      -50%
+    );
+  margin: 0;
+  box-shadow:
+    0 12px 36px
+    rgba(
+      0,
+      0,
+      0,
+      0.48
+    );
+}

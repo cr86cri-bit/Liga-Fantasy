@@ -497,3 +497,55 @@ src/
 ```
 
 Los renders están en `public/campus/` y se usan como assets visuales, no como lógica. Las peticiones a Biwenger continúan pasando por el backend y por las mismas protecciones anti-rate-limit.
+
+## Oficinas interactivas
+
+Las seis áreas principales ya no se muestran como una página convencional.
+Cada módulo se abre dentro de una oficina temática de Cañadores FC y la
+interfaz React real ocupa la pantalla del monitor.
+
+Las oficinas incluidas son:
+
+- **Mi equipo** → Oficina del mánager.
+- **Mercado** → Dirección de fichajes.
+- **Movimientos** → Administración deportiva.
+- **Mejor XI** → Sala táctica.
+- **Rivales** → Centro de scouting.
+- **Protección** → Centro tecnológico.
+
+Las imágenes están optimizadas en `public/offices/*.webp`.
+
+### La pantalla no es una imagen
+
+`OfficeScene.jsx` coloca los componentes React existentes sobre el monitor de
+cada render. Esto significa que dentro de la pantalla continúan funcionando:
+
+- filtros;
+- scroll;
+- modales de jugador;
+- pujas;
+- ventas;
+- Mejor XI;
+- edición de alineación;
+- rivales;
+- notificaciones;
+- historial;
+- protección y métricas de API.
+
+La oficina es únicamente presentación. No se han duplicado ni reemplazado las
+funciones que acceden a Biwenger.
+
+### Navegación
+
+El monitor tiene una barra real para cambiar entre las oficinas y un botón
+**Campus** permite volver al mapa general.
+
+En pantallas pequeñas el fondo de la oficina se convierte en ambientación y el
+monitor pasa a ocupar casi toda la pantalla, manteniendo la funcionalidad.
+
+### API
+
+Este cambio no añade endpoints ni polling. Las oficinas son imágenes estáticas
+locales y las interfaces reutilizan el mismo estado y las mismas llamadas que
+ya existían. Se conserva el sistema completo de caché, cola, pestaña líder y
+circuit breaker.

@@ -1580,16 +1580,57 @@ const handleManualRefresh =
     );
   }
 
+  const isCampus =
+    tab ===
+    "campus";
+
   return (
-    <div className="app">
+    <div
+      className={`app ${
+        isCampus
+          ? "app-campus-mode"
+          : "app-office-mode"
+      }`}
+    >
       <Toasts items={toasts} onClose={removeToast} />
 
-      <ClubHeader data={data} refreshing={refreshing} manualRefreshRemaining={manualRefreshRemaining} onRefresh={handleManualRefresh} />
+      {isCampus && (
+        <>
+          <ClubHeader
+            data={data}
+            refreshing={refreshing}
+            manualRefreshRemaining={manualRefreshRemaining}
+            onRefresh={handleManualRefresh}
+          />
 
-      {error && <div className="warning">{error}</div>}
+          <FinanceMetrics
+            data={data}
+          />
 
-      <FinanceMetrics data={data} />
-      <ClubTabs tab={tab} onChange={setTab} data={data} marketCount={market.length} movesCount={myBids.length + mySales.length} />
+          <ClubTabs
+            tab={tab}
+            onChange={setTab}
+            data={data}
+            marketCount={market.length}
+            movesCount={
+              myBids.length +
+              mySales.length
+            }
+          />
+        </>
+      )}
+
+      {error && (
+        <div
+          className={
+            isCampus
+              ? "warning"
+              : "warning office-warning"
+          }
+        >
+          {error}
+        </div>
+      )}
 
       {tab === "campus" && (
         <CampusScreen
@@ -1601,7 +1642,13 @@ const handleManualRefresh =
       )}
 
       {tab === "team" && (
-        <TeamScreen squad={data?.squad || []} onDetails={setSelectedTeamPlayer} onSell={openSellAction} />
+        <TeamScreen
+          data={data}
+          squad={data?.squad || []}
+          onDetails={setSelectedTeamPlayer}
+          onSell={openSellAction}
+          onNavigate={setTab}
+        />
       )}
 
       {tab === "market" && (
@@ -1622,15 +1669,25 @@ const handleManualRefresh =
           onOpenHistory={() => setNotificationHistoryOpen(true)}
           onDetails={setSelectedMarketPlayer}
           onBid={openBidAction}
+          onNavigate={setTab}
         />
       )}
 
       {tab === "moves" && (
-        <MovementsScreen bids={myBids} sales={mySales} now={now} onDetails={setSelectedMarketPlayer} />
+        <MovementsScreen
+          data={data}
+          bids={myBids}
+          sales={mySales}
+          now={now}
+          onDetails={setSelectedMarketPlayer}
+          onNavigate={setTab}
+        />
       )}
 
       {tab === "xi" && (
         <BestXIScreen
+          data={data}
+          onNavigate={setTab}
           bestXI={data?.bestXI}
           squad={data?.squad || []}
           savedLineup={data?.lineup}
@@ -1643,19 +1700,43 @@ const handleManualRefresh =
       )}
 
       {tab === "rivals" && (
-        <RivalsScreen rivals={data?.rivals || []} loading={rivalsLoading} onDetails={setSelectedRival} />
+        <RivalsScreen
+          data={data}
+          rivals={data?.rivals || []}
+          loading={rivalsLoading}
+          onDetails={setSelectedRival}
+          onNavigate={setTab}
+        />
       )}
 
       {tab === "protection" && (
-        <ProtectionScreen system={data?.system} isLeader={isApiLeader} now={now} />
+        <ProtectionScreen
+          data={data}
+          system={data?.system}
+          isLeader={isApiLeader}
+          now={now}
+          onNavigate={setTab}
+        />
       )}
 
-      <footer>
-        <span>Operaciones reales activadas · Siempre requieren confirmación</span>
-        <span>
-          Última sincronización: {data?.syncedAt ? new Date(data.syncedAt).toLocaleString("es-BO") : "-"}
-        </span>
-      </footer>
+      {isCampus && (
+        <footer>
+          <span>
+            Operaciones reales activadas · Siempre requieren confirmación
+          </span>
+
+          <span>
+            Última sincronización:{" "}
+            {data?.syncedAt
+              ? new Date(
+                  data.syncedAt
+                ).toLocaleString(
+                  "es-BO"
+                )
+              : "-"}
+          </span>
+        </footer>
+      )}
 
 
 
