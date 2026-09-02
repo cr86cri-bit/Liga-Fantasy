@@ -1,0 +1,1175 @@
+/* =========================================================
+   CAÑADORES FC · ATHLETIC IDENTITY
+   ========================================================= */
+
+:root {
+  --ca-surface: #131313;
+  --ca-surface-bright: #1c2421;
+  --ca-surface-low: #0e0e0e;
+  --ca-surface-mid: #201f1f;
+  --ca-surface-high: #2a2a2a;
+  --ca-forest: #062c1e;
+  --ca-forest-2: #0a3d2a;
+  --ca-forest-3: #123d2d;
+  --ca-burgundy: #800020;
+  --ca-burgundy-bright: #a41f3d;
+  --ca-cream: #f2e7bd;
+  --ca-cream-muted: #c8c8b0;
+  --ca-gold: #d4af37;
+  --ca-gold-soft: #e9c349;
+  --ca-text: #e5e2e1;
+  --ca-muted: #aab3ac;
+  --ca-line: rgba(242, 231, 189, 0.15);
+  --ca-line-strong: rgba(212, 175, 55, 0.45);
+  --ca-success: #70c98e;
+  --ca-danger: #ff9b9f;
+  --ca-shadow: rgba(0, 0, 0, 0.48);
+  font-family:
+    "Hanken Grotesk",
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+  color: var(--ca-text);
+  background: var(--ca-surface);
+}
+
+html {
+  color-scheme: dark;
+  background: var(--ca-surface);
+}
+
+body {
+  background:
+    linear-gradient(
+      rgba(6, 44, 30, 0.92),
+      rgba(8, 17, 13, 0.96)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 23px,
+      rgba(212, 175, 55, 0.075) 24px,
+      rgba(212, 175, 55, 0.075) 25px,
+      transparent 26px,
+      transparent 47px,
+      rgba(128, 0, 32, 0.10) 48px,
+      rgba(128, 0, 32, 0.10) 49px
+    ),
+    #062c1e;
+  color: var(--ca-text);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 20% 0%,
+      rgba(212, 175, 55, 0.08),
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 100% 12%,
+      rgba(128, 0, 32, 0.15),
+      transparent 34rem
+    );
+}
+
+.app {
+  width: min(
+    1500px,
+    calc(100% - 42px)
+  );
+  padding:
+    24px 0
+    54px;
+}
+
+h1,
+h2,
+h3,
+.xi-topbar h2,
+.metric strong,
+.market-status-countdown strong,
+.api-protection-metrics strong {
+  font-family:
+    "Anton",
+    Impact,
+    "Arial Narrow",
+    sans-serif;
+  font-weight: 400;
+}
+
+.brand,
+.section-label,
+.eyebrow,
+.metric span,
+.market-chip-stats span,
+.chip-stats small,
+.api-protection-metrics span,
+.api-next-refresh span {
+  color: var(--ca-gold-soft);
+  letter-spacing: 0.13em;
+}
+
+button,
+article,
+section,
+input,
+select,
+textarea,
+.modal-card,
+.player-chip,
+.market-chip,
+.metric,
+.tabs button,
+.api-protection-panel,
+.market-status-card,
+.market-status-summary,
+.notification-button,
+.notification-history-button,
+.market-position-filter-button,
+.seller-badge,
+.detail-button,
+.chip-operation-button,
+.operation-button,
+.lineup-player-option,
+.lineup-player-pool,
+.lineup-editor-controls,
+.football-pitch {
+  border-radius: 0 !important;
+}
+
+/* 45° athletic cut para elementos destacados */
+.refresh-button,
+.primary-button,
+.lineup-save-button,
+.xi-edit-button,
+.market-chip-highlight {
+  clip-path:
+    polygon(
+      0 0,
+      calc(100% - 14px) 0,
+      100% 14px,
+      100% 100%,
+      0 100%
+    );
+}
+
+/* =========================================================
+   HEADER DE CLUB
+   ========================================================= */
+
+.canadores-header {
+  position: relative;
+  align-items: stretch;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid var(--ca-line);
+  border-top: 2px solid var(--ca-gold);
+  background:
+    linear-gradient(
+      90deg,
+      rgba(6, 44, 30, 0.96),
+      rgba(11, 33, 24, 0.94)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 23px,
+      rgba(212, 175, 55, 0.06) 24px,
+      rgba(212, 175, 55, 0.06) 25px
+    );
+  box-shadow:
+    4px 4px 0
+    rgba(0, 0, 0, 0.42);
+}
+
+.canadores-header::after {
+  content: "";
+  position: absolute;
+  inset: auto -72px -118px auto;
+  width: 310px;
+  height: 310px;
+  border: 46px solid rgba(128, 0, 32, 0.11);
+  transform: rotate(19deg);
+  pointer-events: none;
+}
+
+.canadores-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.canadores-crest-shell {
+  width: 108px;
+  height: 108px;
+  flex: 0 0 108px;
+  overflow: hidden;
+  border: 1px solid rgba(242, 231, 189, 0.34);
+  background: #043021;
+  box-shadow:
+    4px 4px 0
+    rgba(0, 0, 0, 0.55);
+}
+
+.canadores-crest {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.canadores-brand-copy {
+  min-width: 0;
+}
+
+.canadores-brand-copy .brand {
+  color: var(--ca-gold);
+}
+
+.canadores-brand-copy h1 {
+  margin: 7px 0 5px;
+  color: var(--ca-cream);
+  font-size:
+    clamp(
+      38px,
+      5.2vw,
+      70px
+    );
+  line-height: 0.96;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  text-shadow:
+    3px 3px 0
+    rgba(0, 0, 0, 0.55);
+}
+
+.canadores-manager-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--ca-cream);
+}
+
+.canadores-manager-line strong {
+  font-size: 15px;
+}
+
+.canadores-manager-line span {
+  padding: 3px 7px;
+  border-left: 3px solid var(--ca-burgundy);
+  background: rgba(128, 0, 32, 0.15);
+  color: #e5c9d0;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.canadores-motto {
+  margin-top: 6px !important;
+  color: var(--ca-cream-muted) !important;
+  font-style: italic;
+  font-weight: 600 !important;
+}
+
+.canadores-header-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.canadores-kit-card {
+  display: grid;
+  grid-template-columns:
+    58px
+    minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-width: 260px;
+  height: 80px;
+  padding: 8px;
+  border: 1px solid var(--ca-line);
+  border-left: 4px solid var(--ca-burgundy);
+  background: rgba(19, 19, 19, 0.58);
+}
+
+.canadores-kit-card img {
+  width: 58px;
+  height: 64px;
+  object-fit: cover;
+  object-position: 50% 12%;
+  border: 1px solid rgba(242, 231, 189, 0.16);
+}
+
+.canadores-kit-card span,
+.canadores-kit-card strong {
+  display: block;
+}
+
+.canadores-kit-card span {
+  color: var(--ca-gold);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.canadores-kit-card strong {
+  margin-top: 5px;
+  color: var(--ca-cream);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+/* =========================================================
+   BOTONES
+   ========================================================= */
+
+.refresh-button,
+.primary-button,
+.lineup-save-button,
+.xi-edit-button {
+  min-height: 44px;
+  border: 1px solid var(--ca-gold);
+  background: var(--ca-gold);
+  color: #1b1809;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.refresh-button:hover,
+.primary-button:hover,
+.lineup-save-button:hover,
+.xi-edit-button:hover {
+  border-color: var(--ca-burgundy-bright);
+  background: var(--ca-burgundy);
+  color: #fff3f4;
+}
+
+.chip-operation-button,
+.operation-button,
+.detail-button,
+.xi-secondary-button,
+.real-action-cancel {
+  border-color: rgba(242, 231, 189, 0.30) !important;
+  background: rgba(242, 231, 189, 0.045) !important;
+  color: var(--ca-cream) !important;
+}
+
+.chip-operation-button:hover,
+.operation-button:hover,
+.detail-button:hover,
+.xi-secondary-button:hover,
+.real-action-cancel:hover {
+  border-color: var(--ca-gold) !important;
+  background: var(--ca-burgundy) !important;
+  color: #fff !important;
+}
+
+/* =========================================================
+   MÉTRICAS
+   ========================================================= */
+
+.metrics {
+  gap: 8px;
+}
+
+.metric {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--ca-line);
+  border-top: 2px solid rgba(212, 175, 55, 0.40);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(28, 36, 33, 0.96),
+      rgba(6, 44, 30, 0.84)
+    );
+  box-shadow:
+    3px 3px 0
+    rgba(0, 0, 0, 0.34);
+}
+
+.metric::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 23px,
+      rgba(128, 0, 32, 0.22) 24px,
+      rgba(128, 0, 32, 0.22) 25px
+    );
+}
+
+.metric > * {
+  position: relative;
+  z-index: 1;
+}
+
+.metric strong {
+  color: var(--ca-cream);
+  letter-spacing: 0.01em;
+}
+
+/* =========================================================
+   TABS
+   ========================================================= */
+
+.tabs {
+  gap: 0;
+  margin-top: 4px;
+  border: 1px solid var(--ca-line);
+  background: rgba(6, 44, 30, 0.72);
+}
+
+.tabs button {
+  min-height: 54px;
+  padding: 0 17px;
+  border-right: 1px solid var(--ca-line);
+  border-bottom: 0;
+  color: #b0b8b2;
+  font-weight: 850;
+  letter-spacing: 0.015em;
+}
+
+.tabs button:last-child {
+  border-right: 0;
+}
+
+.tabs button:hover {
+  background: rgba(128, 0, 32, 0.17);
+  color: var(--ca-cream);
+}
+
+.tabs button.active {
+  border-bottom: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(212, 175, 55, 0.18),
+      rgba(6, 44, 30, 0.62)
+    );
+  box-shadow:
+    inset 0 -3px 0
+    var(--ca-gold);
+  color: var(--ca-cream);
+}
+
+.tabs button span {
+  border-radius: 0;
+  background: rgba(128, 0, 32, 0.36);
+  color: #f0d7dd;
+}
+
+/* =========================================================
+   SECTION HEADERS
+   ========================================================= */
+
+.section-header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ca-line);
+}
+
+.section-header h2,
+.xi-topbar h2 {
+  color: var(--ca-cream);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.section-header p,
+.xi-topbar p {
+  color: #99a69f;
+}
+
+/* =========================================================
+   ESCUDOS / IDENTIDAD DE CLUB
+   ========================================================= */
+
+.team-crest {
+  display: inline-block;
+  flex: 0 0 auto;
+  object-fit: contain;
+  object-position: center;
+  background: rgba(242, 231, 189, 0.06);
+}
+
+.team-crest-small {
+  width: 25px;
+  height: 25px;
+}
+
+.team-crest-tiny {
+  width: 18px;
+  height: 18px;
+}
+
+.team-crest-fallback {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: #0b2f22;
+  color: var(--ca-gold);
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.club-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--ca-cream-muted);
+}
+
+.club-identity > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.club-identity-compact {
+  gap: 6px;
+  font-size: 10px;
+}
+
+.chip-club {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+  min-height: 25px;
+  color: var(--ca-cream-muted);
+}
+
+.lineup-option-club {
+  display: flex !important;
+  align-items: center;
+  gap: 5px;
+}
+
+/* =========================================================
+   PLAYER CHIPS
+   ========================================================= */
+
+.team-chip-grid {
+  gap: 8px;
+}
+
+.player-chip,
+.market-chip,
+.my-market-move-card,
+.lineup-player-option {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--ca-line);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(10, 61, 42, 0.76),
+      rgba(19, 19, 19, 0.88)
+    );
+  box-shadow:
+    3px 3px 0
+    rgba(0, 0, 0, 0.34);
+}
+
+.player-chip::before,
+.market-chip::before,
+.my-market-move-card::before,
+.lineup-player-option::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.42;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 23px,
+      rgba(212, 175, 55, 0.08) 24px,
+      rgba(212, 175, 55, 0.08) 25px,
+      transparent 26px,
+      transparent 47px,
+      rgba(128, 0, 32, 0.16) 48px,
+      rgba(128, 0, 32, 0.16) 49px
+    );
+}
+
+.player-chip > *,
+.market-chip > *,
+.my-market-move-card > *,
+.lineup-player-option > * {
+  position: relative;
+  z-index: 1;
+}
+
+.player-chip {
+  border-left: 3px solid rgba(212, 175, 55, 0.48);
+}
+
+.player-chip:hover,
+.market-chip:hover,
+.my-market-move-card:hover {
+  border-color: rgba(212, 175, 55, 0.72);
+  box-shadow:
+    4px 4px 0
+    rgba(0, 0, 0, 0.48);
+  transform: translateY(-1px);
+}
+
+.chip-name strong,
+.my-market-move-name strong {
+  color: var(--ca-cream);
+  font-size: 14px;
+}
+
+.position,
+.recommendation,
+.status,
+.price-tag,
+.for-sale-badge,
+.my-offer-status,
+.pitch-quality,
+.pitch-availability {
+  border-radius: 0 !important;
+}
+
+.chip-stats > span,
+.market-chip-stats > div,
+.my-market-move-metrics > div {
+  border-left: 2px solid rgba(128, 0, 32, 0.52);
+  background: rgba(14, 14, 14, 0.52);
+}
+
+.chip-stats strong,
+.market-chip-stats strong {
+  color: var(--ca-cream);
+}
+
+.change-positive,
+.market-chip-bid strong {
+  color: var(--ca-gold-soft) !important;
+}
+
+/* =========================================================
+   FOTOS DE JUGADORES
+   ========================================================= */
+
+.player-photo {
+  border-color: rgba(242, 231, 189, 0.24);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(128, 0, 32, 0.24),
+      rgba(6, 44, 30, 0.80)
+    );
+}
+
+/* =========================================================
+   MERCADO / MOVIMIENTOS
+   ========================================================= */
+
+.market-chip-highlight {
+  border: 1px solid var(--ca-gold);
+  box-shadow:
+    inset 4px 0 0 var(--ca-burgundy),
+    4px 4px 0 rgba(0, 0, 0, 0.35);
+}
+
+.bid-decision-yes {
+  background: var(--ca-gold);
+  color: #1b1809;
+}
+
+.bid-decision-no {
+  background: var(--ca-burgundy);
+  color: #fff0f2;
+}
+
+.market-status-card,
+.market-status-summary,
+.notification-button,
+.notification-history-button,
+.market-position-filter-button,
+.api-protection-panel,
+.protection-info-grid article,
+.rivals-loading-card {
+  border-color: var(--ca-line) !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(6, 44, 30, 0.88),
+      rgba(19, 19, 19, 0.92)
+    ) !important;
+}
+
+.market-status-card {
+  border-top: 2px solid var(--ca-gold) !important;
+}
+
+.my-sale-card {
+  border-left: 4px solid var(--ca-burgundy);
+}
+
+.my-bid-card {
+  border-left: 4px solid var(--ca-gold);
+}
+
+/* =========================================================
+   MEJOR XI
+   ========================================================= */
+
+.xi-topbar {
+  padding: 13px 14px;
+  border: 1px solid var(--ca-line);
+  border-top: 2px solid var(--ca-gold);
+  background:
+    linear-gradient(
+      90deg,
+      rgba(6, 44, 30, 0.90),
+      rgba(19, 19, 19, 0.88)
+    );
+}
+
+.football-pitch {
+  border: 1px solid rgba(242, 231, 189, 0.22);
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #0b5837 0,
+      #0b5837 12.5%,
+      #095131 12.5%,
+      #095131 25%
+    ) !important;
+  box-shadow:
+    4px 4px 0
+    rgba(0, 0, 0, 0.44);
+}
+
+.pitch-border,
+.pitch-half-line,
+.pitch-center-circle,
+.pitch-center-dot,
+.penalty-box,
+.goal-box {
+  border-color:
+    rgba(
+      242,
+      231,
+      189,
+      0.46
+    ) !important;
+}
+
+.pitch-player > strong {
+  border-radius: 0 !important;
+  border-left: 2px solid var(--ca-gold);
+  background: rgba(6, 44, 30, 0.96);
+  color: var(--ca-cream);
+}
+
+.pitch-player > .pitch-points {
+  border-radius: 0 !important;
+  background: var(--ca-burgundy);
+  color: #fff;
+}
+
+.pitch-role-captain {
+  background: var(--ca-gold) !important;
+  color: #201900 !important;
+}
+
+.pitch-role-striker {
+  background: var(--ca-burgundy) !important;
+}
+
+/* =========================================================
+   PROTECCIÓN API
+   ========================================================= */
+
+.api-protection-panel {
+  border-top: 2px solid var(--ca-gold) !important;
+}
+
+.api-role {
+  border-radius: 0 !important;
+  border-color: var(--ca-gold) !important;
+  background: rgba(212, 175, 55, 0.12) !important;
+  color: var(--ca-gold-soft) !important;
+}
+
+.api-protection-metrics > div,
+.api-next-refresh > div {
+  border: 1px solid var(--ca-line);
+  background: rgba(14, 14, 14, 0.44);
+}
+
+.api-next-refresh strong {
+  color: var(--ca-gold-soft);
+}
+
+/* =========================================================
+   MODALES
+   ========================================================= */
+
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.78);
+}
+
+.modal-card {
+  border: 1px solid var(--ca-line);
+  border-top: 3px solid var(--ca-gold);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(6, 44, 30, 0.98),
+      rgba(19, 19, 19, 0.99)
+    );
+  box-shadow:
+    6px 6px 0
+    rgba(0, 0, 0, 0.58);
+}
+
+.modal-header {
+  border-bottom-color: var(--ca-line);
+}
+
+.modal-header h2 {
+  color: var(--ca-cream);
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+/* =========================================================
+   INPUTS
+   ========================================================= */
+
+input,
+select,
+textarea {
+  border: 0 !important;
+  border-bottom: 2px solid rgba(242, 231, 189, 0.58) !important;
+  background: rgba(0, 0, 0, 0.16) !important;
+  color: var(--ca-cream) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 0;
+  border-bottom-color: var(--ca-gold) !important;
+}
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+* {
+  scrollbar-color:
+    var(--ca-burgundy)
+    #0e1712;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #0e1712;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--ca-burgundy);
+  border: 2px solid #0e1712;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1050px) {
+  .canadores-kit-card {
+    display: none;
+  }
+
+  .canadores-header-actions {
+    align-items: flex-end;
+  }
+}
+
+@media (max-width: 760px) {
+  .app {
+    width:
+      min(
+        100% - 24px,
+        1500px
+      );
+    padding-top: 12px;
+  }
+
+  .canadores-header {
+    flex-direction: column;
+    gap: 14px;
+    padding: 12px;
+  }
+
+  .canadores-brand-lockup {
+    align-items: flex-start;
+  }
+
+  .canadores-crest-shell {
+    width: 78px;
+    height: 78px;
+    flex-basis: 78px;
+  }
+
+  .canadores-brand-copy h1 {
+    font-size:
+      clamp(
+        32px,
+        11vw,
+        48px
+      );
+  }
+
+  .canadores-manager-line {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .canadores-header-actions {
+    width: 100%;
+  }
+
+  .canadores-header-actions
+    .refresh-button {
+    width: 100%;
+  }
+
+  .tabs {
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .tabs button {
+    min-height: 48px;
+    padding: 0 13px;
+  }
+}
+
+
+/* =========================================================
+   MOVIMIENTOS · PUJA MÁXIMA RECOMENDADA
+   ========================================================= */
+
+.my-bid-metrics {
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+}
+
+.my-bid-metrics
+  .recommended-bid-metric {
+  border-left-color:
+    var(
+      --ca-gold,
+      #d4af37
+    );
+  background:
+    linear-gradient(
+      145deg,
+      rgba(212, 175, 55, 0.12),
+      rgba(6, 44, 30, 0.34)
+    );
+}
+
+.my-bid-metrics
+  .recommended-bid-metric
+  span {
+  color:
+    var(
+      --ca-gold-soft,
+      #e9c349
+    );
+}
+
+.my-bid-metrics
+  .recommended-bid-metric
+  strong {
+  color:
+    var(
+      --ca-cream,
+      #f2e7bd
+    );
+}
+
+.bid-recommendation-status {
+  display: grid;
+  grid-template-columns:
+    28px
+    minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 9px;
+  border: 1px solid;
+  background:
+    rgba(
+      8,
+      30,
+      17,
+      0.72
+    );
+}
+
+.bid-recommendation-status
+  > span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background:
+    rgba(
+      112,
+      201,
+      142,
+      0.15
+    );
+  color:
+    #8be4a8;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.bid-recommendation-status
+  strong,
+.bid-recommendation-status
+  small {
+  display: block;
+}
+
+.bid-recommendation-status
+  strong {
+  color:
+    #bff0cf;
+  font-size: 9px;
+}
+
+.bid-recommendation-status
+  small {
+  margin-top: 2px;
+  color:
+    #799187;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.bid-recommendation-status.within {
+  border-color:
+    rgba(
+      112,
+      201,
+      142,
+      0.42
+    );
+}
+
+.bid-recommendation-status.over {
+  border-color:
+    rgba(
+      164,
+      31,
+      61,
+      0.72
+    );
+  background:
+    rgba(
+      71,
+      17,
+      29,
+      0.68
+    );
+}
+
+.bid-recommendation-status.over
+  > span {
+  background:
+    rgba(
+      164,
+      31,
+      61,
+      0.25
+    );
+  color:
+    #ffabbc;
+}
+
+.bid-recommendation-status.over
+  strong {
+  color:
+    #ffc4cf;
+}
+
+.bid-recommendation-status.over
+  small {
+  color:
+    #c6919b;
+}
+
+.my-bid-over-recommended {
+  border-color:
+    rgba(
+      164,
+      31,
+      61,
+      0.72
+    ) !important;
+}
+
+.recommended-bid-disclaimer {
+  margin: 0;
+  padding-top: 6px;
+  border-top:
+    1px solid
+    rgba(
+      242,
+      231,
+      189,
+      0.10
+    );
+  color:
+    #6f7f77;
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+@media (
+  max-width:
+    900px
+) {
+  .my-bid-metrics {
+    grid-template-columns:
+      1fr;
+  }
+}

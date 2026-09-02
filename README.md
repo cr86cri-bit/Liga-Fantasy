@@ -459,3 +459,41 @@ datos de `GET /market` que ya estaban cargados.
 
 La cifra es una recomendación analítica de Liga Fantasy, no un límite oficial
 de Biwenger ni una garantía de adjudicación.
+
+
+## Campus interactivo y frontend modular
+
+La aplicación abre ahora en el **Campus Cañadores FC**, usando los renders generados como mapa y vistas previas de los edificios. Cada edificio funciona como acceso a un módulo real: Mi equipo, Mercado, Movimientos, Mejor XI, Rivales y Protección.
+
+El frontend se dividió por dominio para evitar un `App.jsx` gigante:
+
+```text
+src/
+├── components/
+│   ├── actions/
+│   ├── lineup/
+│   ├── market/
+│   ├── notifications/
+│   ├── players/
+│   ├── protection/
+│   ├── rivals/
+│   ├── sports/
+│   ├── team/
+│   └── ui/
+├── screens/
+│   ├── Campus/
+│   ├── Market/
+│   ├── Protection/
+│   ├── Rivals/
+│   └── Team/
+├── styles/
+│   ├── base.css
+│   └── canadores-theme.css
+├── utils/
+│   ├── app.js
+│   └── marketNotifications.js
+├── App.jsx
+└── main.jsx
+```
+
+Los renders están en `public/campus/` y se usan como assets visuales, no como lógica. Las peticiones a Biwenger continúan pasando por el backend y por las mismas protecciones anti-rate-limit.
