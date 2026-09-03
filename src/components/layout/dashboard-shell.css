@@ -3766,3 +3766,367 @@ button {
     font-size: 13px !important;
   }
 }
+
+
+/* =========================================================
+   MI EQUIPO · FILTROS DE PLANTILLA
+   ========================================================= */
+
+.team-filters-panel {
+  margin: 12px 0 14px;
+  overflow: hidden;
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(5, 49, 33, 0.90),
+      rgba(4, 32, 23, 0.94)
+    );
+}
+
+.team-filters-summary {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--dash-border);
+  background:
+    rgba(
+      242,
+      231,
+      189,
+      0.025
+    );
+}
+
+.team-filters-summary span,
+.team-filters-summary strong {
+  display: block;
+}
+
+.team-filters-summary span {
+  color: var(--dash-gold);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.10em;
+}
+
+.team-filters-summary strong {
+  margin-top: 3px;
+  color: var(--dash-cream);
+  font-size: 15px;
+}
+
+.team-clear-filters {
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid rgba(215, 186, 105, 0.28);
+  border-radius: 8px !important;
+  background: rgba(215, 186, 105, 0.06);
+  color: #eadba8;
+  cursor: pointer;
+  font-size: 11px !important;
+  font-weight: 850;
+}
+
+.team-clear-filters:hover {
+  border-color: rgba(215, 186, 105, 0.55);
+  background: rgba(215, 186, 105, 0.12);
+}
+
+.team-filter-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(240px, 0.8fr)
+    minmax(420px, 1.35fr)
+    minmax(460px, 1.4fr);
+  gap: 12px;
+  padding: 12px;
+}
+
+.team-filter-group {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(215, 186, 105, 0.14);
+  border-radius: 10px;
+  background: rgba(2, 29, 20, 0.47);
+}
+
+.team-filter-group-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #98aa9f;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.team-filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.team-filter-buttons button {
+  min-height: 42px;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid rgba(215, 186, 105, 0.17);
+  border-radius: 8px !important;
+  background: rgba(7, 56, 38, 0.58);
+  color: #c8d3cb;
+  cursor: pointer;
+  font-size: 11px !important;
+  white-space: nowrap;
+}
+
+.team-filter-buttons button:hover {
+  border-color: rgba(215, 186, 105, 0.42);
+  color: var(--dash-cream);
+}
+
+.team-filter-buttons button.active {
+  border-color: rgba(215, 186, 105, 0.62);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(215, 186, 105, 0.18),
+      rgba(126, 22, 51, 0.13)
+    );
+  color: var(--dash-cream);
+}
+
+.team-filter-icon {
+  color: var(--dash-gold);
+  font-size: 12px;
+}
+
+.team-filter-buttons button b {
+  font-size: inherit;
+}
+
+.team-filter-buttons button small {
+  min-width: 22px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.24);
+  color: #d8dfda;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+/* Recomendaciones con identidad visual rápida. */
+.team-filter-group.recommendation
+  .team-filter-buttons
+  button:nth-child(2).active {
+  border-color: rgba(84, 190, 118, 0.58);
+  background: rgba(59, 151, 91, 0.16);
+}
+
+.team-filter-group.recommendation
+  .team-filter-buttons
+  button:nth-child(3).active {
+  border-color: rgba(215, 186, 105, 0.62);
+  background: rgba(215, 186, 105, 0.13);
+}
+
+.team-filter-group.recommendation
+  .team-filter-buttons
+  button:nth-child(4).active {
+  border-color: rgba(194, 63, 78, 0.64);
+  background: rgba(130, 22, 53, 0.20);
+}
+
+/* Posiciones. */
+.team-position-filter {
+  display: grid;
+  grid-template-columns:
+    repeat(5, minmax(72px, 1fr));
+  gap: 6px;
+}
+
+.team-position-filter button {
+  min-width: 0;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns:
+    1fr auto;
+  grid-template-rows:
+    auto auto;
+  align-items: center;
+  column-gap: 5px;
+  padding: 7px 8px;
+  border: 1px solid rgba(215, 186, 105, 0.16);
+  border-radius: 8px !important;
+  background: rgba(7, 56, 38, 0.55);
+  color: #c7d2ca;
+  cursor: pointer;
+  text-align: left;
+}
+
+.team-position-filter button:hover {
+  border-color: rgba(215, 186, 105, 0.42);
+}
+
+.team-position-filter button.active {
+  border-color: rgba(215, 186, 105, 0.64);
+  background: rgba(215, 186, 105, 0.13);
+  color: var(--dash-cream);
+}
+
+.team-position-filter button b {
+  font-size: 12px;
+}
+
+.team-position-filter button span {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  color: #91a49a;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-position-filter button small {
+  min-width: 21px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.23);
+  color: #dbe1dc;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.team-position-filter button.active.position-ar {
+  border-color: rgba(245, 196, 75, 0.65);
+}
+
+.team-position-filter button.active.position-df {
+  border-color: rgba(72, 176, 223, 0.65);
+}
+
+.team-position-filter button.active.position-mc {
+  border-color: rgba(78, 196, 111, 0.65);
+}
+
+.team-position-filter button.active.position-dl {
+  border-color: rgba(235, 80, 93, 0.65);
+}
+
+/* Venta activa muy visible en los chips filtrados. */
+.player-chip:has(.for-sale-badge) {
+  border-color: rgba(215, 186, 105, 0.42);
+}
+
+.for-sale-badge {
+  font-size: 9px !important;
+}
+
+/* Sin resultados. */
+.team-filter-empty {
+  min-height: 245px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  padding: 25px;
+  border: 1px dashed rgba(215, 186, 105, 0.30);
+  border-radius: 12px;
+  background: rgba(5, 38, 27, 0.52);
+  text-align: center;
+}
+
+.team-filter-empty > span {
+  color: var(--dash-gold);
+  font-size: 31px;
+}
+
+.team-filter-empty strong {
+  color: var(--dash-cream);
+  font-size: 18px;
+}
+
+.team-filter-empty p {
+  margin: 0;
+  color: var(--dash-muted);
+  font-size: 12px;
+}
+
+.team-filter-empty button {
+  min-height: 39px;
+  margin-top: 4px;
+  padding: 0 12px;
+  border: 1px solid rgba(215, 186, 105, 0.34);
+  border-radius: 8px !important;
+  background: rgba(215, 186, 105, 0.08);
+  color: #e8d89f;
+  cursor: pointer;
+  font-size: 11px !important;
+  font-weight: 850;
+}
+
+@media (max-width: 1350px) {
+  .team-filter-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .team-filter-group.position {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 850px) {
+  .team-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .team-filter-group.position {
+    grid-column: auto;
+  }
+
+  .team-position-filter {
+    grid-template-columns:
+      repeat(3, minmax(80px, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .team-filters-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .team-clear-filters {
+    width: 100%;
+  }
+
+  .team-filter-buttons {
+    display: grid;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .team-filter-buttons button {
+    width: 100%;
+  }
+
+  .team-position-filter {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}

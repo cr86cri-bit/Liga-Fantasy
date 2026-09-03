@@ -768,3 +768,48 @@ Se aumentó la escala tipográfica de:
 No se añadió ninguna llamada nueva a Biwenger. La modificación de
 notificaciones funciona únicamente con el historial local que el sistema ya
 generaba.
+
+## Filtros en Mi equipo
+
+La pantalla **Mi equipo** incorpora ahora tres filtros combinables.
+
+### Estado de venta
+
+- Todos
+- En venta
+- Sin vender
+
+`En venta` utiliza directamente `player.isForSale`, por lo que muestra los
+jugadores que Biwenger ya marca como puestos a la venta.
+
+### Recomendación de Liga Fantasy
+
+- Todas
+- Mantener
+- Vigilar
+- Vender
+
+El filtro utiliza `player.analysis.recommendation`, exactamente la misma
+recomendación que se muestra en el chip de cada jugador.
+
+### Posición
+
+- Todas
+- AR / Porteros
+- DF / Defensas
+- MC / Centrocampistas
+- DL / Delanteros
+
+Los tres filtros pueden combinarse. Por ejemplo:
+
+`En venta + Vender + DF`
+
+mostrará únicamente defensas ya puestos a la venta cuya recomendación sea
+VENDER.
+
+Cada opción muestra su cantidad de jugadores y hay un botón **Limpiar
+filtros**. Si una combinación no devuelve resultados aparece un estado vacío
+con acceso para restablecerlos.
+
+Todos los filtros se realizan en React sobre la plantilla ya cargada. Cambiar
+los filtros **no genera ninguna llamada adicional a Biwenger**.
