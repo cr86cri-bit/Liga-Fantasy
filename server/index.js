@@ -379,11 +379,18 @@ app.get("/api/dashboard", async (req, res) => {
         ""
       ) === "1";
 
+    const includeTransfers =
+      String(
+        req.query?.includeTransfers ||
+        ""
+      ) === "1";
+
     const data =
       await getClient().obtenerDashboard({
         refresh,
         includeRivals,
         includeLineup,
+        includeTransfers,
       });
 
     res.json({

@@ -674,3 +674,77 @@ El sidebar tiene ahora filas de altura controlada para:
 
 Las franjas y el pie ya no pueden crecer o desbordarse, y se mantienen
 alineados tanto expandido como plegado.
+
+## Fichajes y notificaciones reales
+
+### Nueva pestaña Fichajes
+
+Se añadió una nueva pestaña **Fichajes** al sidebar y al menú superior.
+
+El backend consulta el tablón de la liga mediante el endpoint de noticias de
+Biwenger y separa:
+
+- `market` → **Mercado de fichajes**;
+- `transfer` / `adminTransfer` → **Fichajes** entre managers.
+
+Las tarjetas muestran, cuando Biwenger lo entrega:
+
+- jugador;
+- foto;
+- posición;
+- club;
+- comprador;
+- vendedor;
+- importe;
+- cantidad de pujas;
+- antigüedad del movimiento.
+
+La respuesta se cachea durante **30 minutos** y pasa por el mismo scheduler,
+ApiGuard, ApiUsageTracker y circuit breaker. En condiciones normales supone
+como máximo unas 2 llamadas reales por hora al tablón, y las consultas
+intermedias se resuelven desde caché.
+
+Si el endpoint de noticias cambia o falla, el dashboard conserva el último
+tablón persistido y no rompe el resto de la aplicación.
+
+### Inicio
+
+Inicio incluye ahora dos bloques nuevos:
+
+- **Mercado de fichajes**;
+- **Fichajes**.
+
+Muestran una selección de los movimientos más recientes y enlazan a la nueva
+pestaña completa.
+
+### Notificaciones
+
+Se corrigió el contador de la barra superior.
+
+Antes mostraba `notificationHistory.length`, es decir, todos los registros
+históricos guardados. Por eso podía aparecer un número como 78 aunque no fueran
+avisos nuevos.
+
+Ahora hay:
+
+- botón **Movimientos** independiente y sin contador;
+- botón **Notificaciones** independiente;
+- el contador representa únicamente notificaciones no leídas;
+- al abrir Notificaciones, el contador vuelve a cero;
+- el historial completo se conserva hasta que el usuario pulse Limpiar.
+
+El estado de lectura se guarda en:
+`liga-fantasy-notification-last-read-v1`.
+
+### Legibilidad
+
+También se aumentaron tamaños de texto en:
+
+- sidebar;
+- menú superior;
+- encabezados;
+- cards de Inicio;
+- jugadores;
+- mercado;
+- fichajes;
+- historial de notificaciones.

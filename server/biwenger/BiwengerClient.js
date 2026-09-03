@@ -46,6 +46,14 @@ import {
 const API_URL =
   "https://biwenger.as.com/api/v2";
 
+/*
+ * Biwenger mantiene el tablón/noticias de liga en la superficie legacy.
+ * Lo usamos únicamente para leer fichajes y siempre pasa por el mismo
+ * scheduler, guard y tracker que el resto de llamadas.
+ */
+const LEGACY_API_URL =
+  "https://biwenger.as.com/api/v1";
+
 const CF_API_URL =
   "https://cf.biwenger.com/api/v2";
 
@@ -74,6 +82,9 @@ const TTL = {
   rivalSquad:
     30 * 60 * 1000,
 
+  transfers:
+    30 * 60 * 1000,
+
   catalog:
     6 *
     60 *
@@ -100,6 +111,9 @@ const MIN_RELOAD = {
 
   rivalSquad:
     10 * 60 * 1000,
+
+  transfers:
+    15 * 60 * 1000,
 
   catalog:
     60 * 60 * 1000,
@@ -742,6 +756,88 @@ export class BiwengerClient {
     );
   }
 
+async obtenerNoticiasFichajes({
+  force = false,
+} = {}) {
+  return this.cache.get(
+    "transfers",
+    {
+      ttlMs:
+        TTL.transfers,
+
+      minReloadMs:
+        MIN_RELOAD.transfers,
+
+      force,
+
+      blocked:
+        this.guard.isBlocked(),
+
+      blockedError:
+        this.crearErrorRateLimit(),
+
+      loader:
+        async () => {
+          await this.inicializar();
+
+          const {
+            response,
+            body,
+          } =
+            await this.fetchBiwenger({
+              url:
+                `${LEGACY_API_URL}/league/news?limit=60`,
+
+              endpoint:
+                "transfers",
+
+              options: {
+                headers:
+                  this.crearHeaders(
+                    true
+                  ),
+              },
+            });
+
+          if (
+            response.status ===
+              401 ||
+            response.status ===
+              403
+          ) {
+            throw new Error(
+              "La sesión de Biwenger ha caducado."
+            );
+          }
+
+          if (
+            !response.ok
+          ) {
+            throw new Error(
+              body?.message ||
+              `No se pudo cargar el tablón de fichajes (${response.status}).`
+            );
+          }
+
+          const rows =
+            Array.isArray(
+              body?.data
+            )
+              ? body.data
+              : Array.isArray(
+                  body
+                    ?.data
+                    ?.news
+                )
+                ? body.data.news
+                : [];
+
+          return rows;
+        },
+    }
+  );
+}
+
   async obtenerAlineacion({
     force = false,
   } = {}) {
@@ -846,6 +942,7 @@ export class BiwengerClient {
     refresh = "smart",
     includeRivals = false,
     includeLineup = false,
+    includeTransfers = false,
   } = {}) {
     await this.asegurarInfraestructura();
 
@@ -869,6 +966,17 @@ export class BiwengerClient {
         ) ||
         [
           "lineup",
+          "all",
+        ].includes(
+          refresh
+        );
+
+      const wantsTransfers =
+        Boolean(
+          includeTransfers
+        ) ||
+        [
+          "transfers",
           "all",
         ].includes(
           refresh
@@ -1139,17 +1247,73 @@ export class BiwengerClient {
           0
         );
 
-      const finances = {
-        balance,
-        maximumBid,
-        teamValue,
-        totalAssets:
-          balance +
-          teamValue,
-      };
+const finances = {
+  balance,
+  maximumBid,
+  teamValue,
+  totalAssets:
+    balance +
+    teamValue,
+};
 
-      /*
-       * RIVALES BAJO DEMANDA.
+/*
+ * FICHAJES / TABLÓN DE LIGA.
+ *
+ * Se carga únicamente cuando el frontend lo solicita y queda
+ * cacheado 30 minutos. Si el endpoint legacy cambia o falla,
+ * conservamos el último tablón persistido sin romper el dashboard.
+ */
+let transferNews =
+  this.lastDashboard
+    ?.transferNews ||
+  persisted
+    ?.transferNews ||
+  {
+    market: [],
+    transfers: [],
+    loadedAt: null,
+  };
+
+if (
+  wantsTransfers
+) {
+  try {
+    const rawTransferNews =
+      await this.obtenerNoticiasFichajes({
+        force:
+          [
+            "transfers",
+            "all",
+          ].includes(
+            refresh
+          ),
+      });
+
+    transferNews =
+      normalizarNoticiasFichajes(
+        rawTransferNews,
+        getPlayer
+      );
+  } catch (
+    error
+  ) {
+    if (
+      error?.code ===
+      "BIWENGER_RATE_LIMIT"
+    ) {
+      throw error;
+    }
+
+    console.warn(
+      "[Biwenger transfers]",
+      error?.message ||
+      error
+    );
+  }
+}
+
+/*
+ * RIVALES BAJO DEMANDA.
        *
        * Si no estamos en la pestaña Rivales, reutilizamos
        * el último análisis guardado y hacemos CERO llamadas
@@ -2045,6 +2209,8 @@ const myBidsWithRecommendation =
         myBids:
           myBidsWithRecommendation,
 
+        transferNews,
+
         bestXI,
         lineup,
         rivals,
@@ -2106,6 +2272,10 @@ const myBidsWithRecommendation =
               TTL.leagueUsers /
               1000,
 
+            transfersSeconds:
+              TTL.transfers /
+              1000,
+
             catalogSeconds:
               TTL.catalog /
               1000,
@@ -2138,6 +2308,13 @@ const myBidsWithRecommendation =
                 .getRemainingSeconds(
                   "catalog",
                   TTL.catalog
+                ),
+
+            transfersSeconds:
+              this.cache
+                .getRemainingSeconds(
+                  "transfers",
+                  TTL.transfers
                 ),
 
             rivalsSeconds:
@@ -2269,6 +2446,7 @@ const myBidsWithRecommendation =
     rivals = false,
     catalog = false,
     leagueUsers = false,
+    transfers = false,
     all = false,
   } = {}) {
     if (all) {
@@ -2303,6 +2481,12 @@ const myBidsWithRecommendation =
     if (catalog) {
       this.cache.invalidate(
         "catalog"
+      );
+    }
+
+    if (transfers) {
+      this.cache.invalidate(
+        "transfers"
       );
     }
 
@@ -3401,6 +3585,250 @@ function endpointName(
     normalized ||
     "api"
   );
+}
+
+function normalizarNoticiasFichajes(
+  rows,
+  getPlayer
+) {
+  const market = [];
+  const transfers = [];
+
+  const sourceRows =
+    Array.isArray(
+      rows
+    )
+      ? rows
+      : [];
+
+  for (
+    const movement of
+      sourceRows
+  ) {
+    const type =
+      String(
+        movement?.type ||
+        ""
+      ).toLowerCase();
+
+    const isMarket =
+      type ===
+      "market";
+
+    const isTransfer =
+      [
+        "transfer",
+        "admintransfer",
+      ].includes(
+        type
+      );
+
+    if (
+      !isMarket &&
+      !isTransfer
+    ) {
+      continue;
+    }
+
+    const contents =
+      Array.isArray(
+        movement?.content
+      )
+        ? movement.content
+        : movement?.content
+          ? [
+              movement.content,
+            ]
+          : [];
+
+    for (
+      const content of
+        contents
+    ) {
+      const playerId =
+        Number(
+          typeof content
+              ?.player ===
+            "object"
+            ? content.player.id
+            : content?.player ||
+              content?.playerID ||
+              0
+        );
+
+      if (
+        !playerId
+      ) {
+        continue;
+      }
+
+      const player =
+        getPlayer(
+          playerId,
+          "market"
+        ) ||
+        {
+          id:
+            playerId,
+
+          name:
+            `Jugador ${playerId}`,
+
+          position:
+            "",
+
+          teamName:
+            "Sin club",
+
+          teamIconUrl:
+            "",
+
+          photo:
+            "",
+        };
+
+      const from =
+        content?.from ||
+        movement?.from ||
+        null;
+
+      const to =
+        content?.to ||
+        movement?.to ||
+        null;
+
+      const amount =
+        Number(
+          content?.amount ||
+          content?.price ||
+          movement?.amount ||
+          0
+        );
+
+      const bids =
+        Number(
+          content?.bids ||
+          content?.offers ||
+          content?.numOffers ||
+          content?.bidCount ||
+          content?.totalBids ||
+          movement?.bids ||
+          0
+        );
+
+      const date =
+        normalizarTimestampSeconds(
+          movement?.date ||
+          movement?.created ||
+          content?.date ||
+          content?.created
+        );
+
+      const item = {
+        id:
+          `${type}-${date || 0}-${playerId}-${Number(to?.id || 0)}-${amount}`,
+
+        type:
+          isMarket
+            ? "market"
+            : "transfer",
+
+        date,
+
+        playerId,
+
+        player,
+
+        amount,
+
+        bids:
+          bids >
+          0
+            ? bids
+            : null,
+
+        buyer: {
+          id:
+            Number(
+              to?.id ||
+              0
+            ) ||
+            null,
+
+          name:
+            to?.name ||
+            "Equipo desconocido",
+        },
+
+        seller: from
+          ? {
+              id:
+                Number(
+                  from?.id ||
+                  0
+                ) ||
+                null,
+
+              name:
+                from?.name ||
+                "Equipo desconocido",
+            }
+          : null,
+      };
+
+      if (
+        isMarket
+      ) {
+        market.push(
+          item
+        );
+      } else {
+        transfers.push(
+          item
+        );
+      }
+    }
+  }
+
+  const byDate =
+    (
+      left,
+      right
+    ) =>
+      Number(
+        right?.date ||
+        0
+      ) -
+      Number(
+        left?.date ||
+        0
+      );
+
+  market.sort(
+    byDate
+  );
+
+  transfers.sort(
+    byDate
+  );
+
+  return {
+    market:
+      market.slice(
+        0,
+        24
+      ),
+
+    transfers:
+      transfers.slice(
+        0,
+        24
+      ),
+
+    loadedAt:
+      new Date()
+        .toISOString(),
+  };
 }
 
 function extraerIdsJugadoresOferta(

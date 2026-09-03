@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { API_CHANNEL_NAME, API_LEADER_HEARTBEAT_MS, API_LEADER_KEY, API_LEADER_LEASE_MS, MANUAL_REFRESH_COOLDOWN_MS, MARKET_SNAPSHOT_KEY, NOTIFICATION_HISTORY_KEY, DASHBOARD_LOCAL_CACHE_KEY, createTabId, readLeaderLease, readLocalDashboardCache, writeLeaderLease, formatMoney, toMilliseconds } from "./utils/app.js";
+import { API_CHANNEL_NAME, API_LEADER_HEARTBEAT_MS, API_LEADER_KEY, API_LEADER_LEASE_MS, MANUAL_REFRESH_COOLDOWN_MS, MARKET_SNAPSHOT_KEY, NOTIFICATION_HISTORY_KEY, NOTIFICATION_LAST_READ_KEY, DASHBOARD_LOCAL_CACHE_KEY, createTabId, readLeaderLease, readLocalDashboardCache, writeLeaderLease, formatMoney, toMilliseconds } from "./utils/app.js";
 import { createMarketSnapshot, compareMarketSnapshots, readNotificationHistory, saveNotificationHistory } from "./utils/marketNotifications.js";
 import { PlayerDetailModal } from "./components/players/PlayerDetailModal.jsx";
 import { RealActionModal } from "./components/actions/RealActionModal.jsx";
@@ -14,6 +14,7 @@ import MovementsScreen from "./screens/Movements/MovementsScreen.jsx";
 import BestXIScreen from "./screens/BestXI/BestXIScreen.jsx";
 import DashboardShell from "./components/layout/DashboardShell.jsx";
 import HomeScreen from "./screens/Home/HomeScreen.jsx";
+import TransfersScreen from "./screens/Transfers/TransfersScreen.jsx";
 
 export default function App() {
   const initialDashboardRef =
@@ -55,10 +56,26 @@ export default function App() {
     setNotificationHistory,
   ] = useState(() => readNotificationHistory());
 
-  const [
-    notificationHistoryOpen,
-    setNotificationHistoryOpen,
-  ] = useState(false);
+const [
+  notificationHistoryOpen,
+  setNotificationHistoryOpen,
+] = useState(false);
+
+const [
+  notificationLastReadAt,
+  setNotificationLastReadAt,
+] = useState(() => {
+  try {
+    return Number(
+      window.localStorage.getItem(
+        NOTIFICATION_LAST_READ_KEY
+      ) ||
+      0
+    );
+  } catch {
+    return 0;
+  }
+});
 
   const [selectedTeamPlayer, setSelectedTeamPlayer] = useState(null);
   const [selectedMarketPlayer, setSelectedMarketPlayer] = useState(null);
@@ -135,15 +152,73 @@ const removeToast = useCallback((id) => {
   );
 }, []);
 
+const unreadNotificationCount =
+  useMemo(
+    () =>
+      notificationHistory.filter(
+        (item) =>
+          Number(
+            item?.createdAt ||
+            0
+          ) >
+          notificationLastReadAt
+      ).length,
+    [
+      notificationHistory,
+      notificationLastReadAt,
+    ]
+  );
+
+const markNotificationsRead =
+  useCallback(
+    () => {
+      const value =
+        Date.now();
+
+      setNotificationLastReadAt(
+        value
+      );
+
+      try {
+        window.localStorage.setItem(
+          NOTIFICATION_LAST_READ_KEY,
+          String(
+            value
+          )
+        );
+      } catch {
+        // localStorage opcional.
+      }
+    },
+    []
+  );
+
+const openRealNotifications =
+  useCallback(
+    () => {
+      markNotificationsRead();
+
+      setNotificationHistoryOpen(
+        true
+      );
+    },
+    [
+      markNotificationsRead,
+    ]
+  );
+
 const clearNotificationHistory = useCallback(() => {
   setNotificationHistory([]);
+  markNotificationsRead();
 
   try {
     window.localStorage.removeItem(NOTIFICATION_HISTORY_KEY);
   } catch {
     // localStorage opcional.
   }
-}, []);
+}, [
+  markNotificationsRead,
+]);
 
 const pushToast = useCallback(
   (title, message, type = "info", meta = {}) => {
@@ -220,6 +295,7 @@ const loadData = useCallback(
     refresh = "smart",
     includeRivals = false,
     includeLineup = false,
+    includeTransfers = true,
   } = {}) => {
     try {
       if (!silent) {
@@ -239,6 +315,11 @@ const loadData = useCallback(
 
           includeLineup:
             includeLineup
+              ? "1"
+              : "0",
+
+          includeTransfers:
+            includeTransfers
               ? "1"
               : "0",
         });
@@ -544,6 +625,10 @@ useEffect(() => {
                 Boolean(
                   message.includeLineup
                 ),
+
+              includeTransfers:
+                message.includeTransfers !==
+                false,
             });
         }
       };
@@ -662,6 +747,7 @@ const requestRefresh =
       refresh = "smart",
       includeRivals = false,
       includeLineup = false,
+      includeTransfers = true,
     } = {}) => {
       if (
         apiLeaderRef.current
@@ -671,6 +757,7 @@ const requestRefresh =
           refresh,
           includeRivals,
           includeLineup,
+          includeTransfers,
         });
       }
 
@@ -683,6 +770,7 @@ const requestRefresh =
           refresh,
           includeRivals,
           includeLineup,
+          includeTransfers,
         });
       }
 
@@ -1594,8 +1682,11 @@ const handleManualRefresh =
           myBids.length +
           mySales.length
         }
-        notificationCount={
-          notificationHistory.length
+        unreadNotificationCount={
+          unreadNotificationCount
+        }
+        onOpenNotifications={
+          openRealNotifications
         }
         refreshing={refreshing}
         manualRefreshRemaining={
@@ -1697,6 +1788,18 @@ const handleManualRefresh =
             }
           />
         )}
+
+{tab ===
+  "transfers" && (
+  <TransfersScreen
+    data={
+      data
+    }
+    onPlayerDetails={
+      setSelectedMarketPlayer
+    }
+  />
+)}
 
         {tab ===
           "moves" && (

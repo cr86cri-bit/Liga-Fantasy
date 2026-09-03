@@ -3269,3 +3269,567 @@ body {
     font-size: 9px !important;
   }
 }
+
+
+/* =========================================================
+   DASHBOARD v3 · FICHAJES + NOTIFICACIONES + LEGIBILIDAD
+   ========================================================= */
+
+/* Texto general más grande. */
+.dashboard-nav-label {
+  font-size: 15px !important;
+}
+
+.dashboard-topnav button {
+  min-height: 48px !important;
+  font-size: 14px !important;
+}
+
+.dashboard-topnav button span {
+  font-size: 19px !important;
+}
+
+.dashboard-manager strong {
+  font-size: 13px !important;
+}
+
+.dashboard-manager span {
+  font-size: 9px !important;
+}
+
+.page-view .section-header h2 {
+  font-size: 34px !important;
+}
+
+.page-view .section-header p {
+  font-size: 14px !important;
+  line-height: 1.5;
+}
+
+.home-panel > header h2 {
+  font-size: 21px !important;
+}
+
+.home-panel > header span {
+  font-size: 9px !important;
+}
+
+.home-panel > header button {
+  font-size: 11px !important;
+}
+
+.home-team-player-copy > strong {
+  font-size: 14px !important;
+}
+
+.home-team-player-copy > span,
+.home-player-status {
+  font-size: 10px !important;
+}
+
+.home-player-points strong {
+  font-size: 20px !important;
+}
+
+.home-market-name strong {
+  font-size: 13px !important;
+}
+
+.home-market-name span {
+  font-size: 9px !important;
+}
+
+.home-market-position,
+.home-market-value,
+.home-market-change {
+  font-size: 10px !important;
+}
+
+.home-stat-card small {
+  font-size: 9px !important;
+}
+
+.home-stat-card strong {
+  font-size: 19px !important;
+}
+
+.home-stat-card div > span {
+  font-size: 9px !important;
+}
+
+/* Topbar: Movimientos sin contador + Notificaciones reales separadas. */
+.dashboard-movements-button,
+.dashboard-real-notification-button {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--dash-border);
+  border-radius: 12px !important;
+  background: rgba(242, 231, 189, 0.035);
+  color: var(--dash-cream);
+  cursor: pointer;
+  font-size: 19px;
+}
+
+.dashboard-movements-button:hover,
+.dashboard-real-notification-button:hover {
+  border-color: rgba(215, 186, 105, 0.45);
+  background: rgba(215, 186, 105, 0.10);
+}
+
+.dashboard-real-notification-button > span {
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  min-width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0 4px;
+  border: 2px solid #052218;
+  border-radius: 999px !important;
+  background: #c72f48;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 950;
+}
+
+/* El botón antiguo ya no se usa. */
+.dashboard-notification-button {
+  display: none !important;
+}
+
+/* =========================================================
+   FICHAJES
+   ========================================================= */
+
+.transfer-board {
+  display: grid;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.transfer-section {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--dash-border);
+  border-radius: 13px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(6, 49, 33, 0.93),
+      rgba(5, 33, 24, 0.96)
+    );
+}
+
+.transfer-section-header {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--dash-border);
+}
+
+.transfer-section-header span {
+  display: block;
+  color: var(--dash-gold);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.10em;
+}
+
+.transfer-section-header h3 {
+  margin: 3px 0 0;
+  color: var(--dash-cream);
+  font-size: 24px;
+  text-transform: uppercase;
+}
+
+.transfer-section-header p {
+  margin: 4px 0 0;
+  color: var(--dash-muted);
+  font-size: 12px;
+}
+
+.transfer-section-header > b {
+  min-width: 38px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(215, 186, 105, 0.28);
+  border-radius: 9px;
+  background: rgba(130, 22, 53, 0.24);
+  color: #f1d4da;
+  font-size: 13px;
+}
+
+.transfer-card-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(230px, 1fr));
+  gap: 10px;
+  padding: 12px;
+  overflow-x: auto;
+}
+
+.transfer-card {
+  min-width: 0;
+  min-height: 248px;
+  display: grid;
+  grid-template-rows:
+    auto auto 1fr auto;
+  gap: 11px;
+  padding: 12px;
+  border: 1px solid rgba(215, 186, 105, 0.20);
+  border-radius: 12px !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(9, 65, 43, 0.76),
+      rgba(10, 36, 27, 0.92)
+    );
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.015);
+}
+
+.transfer-card:hover {
+  border-color: rgba(215, 186, 105, 0.56);
+  transform: translateY(-1px);
+}
+
+.transfer-card.market-transfer {
+  border-top: 3px solid var(--dash-gold);
+}
+
+.transfer-card.user-transfer {
+  border-top: 3px solid var(--dash-burgundy);
+}
+
+.transfer-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+}
+
+.transfer-type-badge {
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: rgba(215, 186, 105, 0.13);
+  color: var(--dash-gold);
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.transfer-card-top time {
+  color: #b2c0b6;
+  font-size: 10px;
+}
+
+.transfer-player-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.transfer-player-row .player-photo-chip {
+  width: 58px !important;
+  height: 58px !important;
+  min-width: 58px !important;
+  min-height: 58px !important;
+}
+
+.transfer-player-copy {
+  min-width: 0;
+}
+
+.transfer-player-copy > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.transfer-player-copy strong {
+  overflow: hidden;
+  color: var(--dash-cream);
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transfer-position {
+  flex: 0 0 auto;
+  padding: 4px 6px !important;
+  font-size: 9px !important;
+}
+
+.transfer-player-club {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  overflow: hidden;
+  color: #b0beb5;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transfer-route {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  align-content: center;
+  min-height: 42px;
+  padding: 9px;
+  border-radius: 8px;
+  background: rgba(2, 28, 19, 0.52);
+}
+
+.transfer-route span {
+  color: #91a499;
+  font-size: 10px;
+}
+
+.transfer-route strong {
+  color: #f2e7bd;
+  font-size: 12px;
+}
+
+.transfer-route b {
+  color: var(--dash-gold);
+}
+
+.transfer-card-bottom {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(215, 186, 105, 0.12);
+}
+
+.transfer-card-bottom > div span,
+.transfer-card-bottom > div strong {
+  display: block;
+}
+
+.transfer-card-bottom > div span {
+  color: #8fa096;
+  font-size: 9px;
+}
+
+.transfer-card-bottom > div strong {
+  margin-top: 2px;
+  color: var(--dash-cream);
+  font-size: 17px;
+}
+
+.transfer-bids {
+  color: #d6c37f;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.transfer-empty {
+  padding: 25px 16px;
+  color: var(--dash-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* =========================================================
+   FICHAJES COMPACTOS EN INICIO
+   ========================================================= */
+
+.home-transfers-area {
+  min-width: 0;
+  padding: 0;
+}
+
+.home-transfers-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+  padding: 13px 15px;
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  background: rgba(5, 43, 29, 0.70);
+}
+
+.home-transfers-heading span {
+  color: var(--dash-gold);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.10em;
+}
+
+.home-transfers-heading h2 {
+  margin: 4px 0 0;
+  color: var(--dash-cream);
+  font-size: 24px;
+}
+
+.home-transfers-heading p {
+  margin: 4px 0 0;
+  color: var(--dash-muted);
+  font-size: 12px;
+}
+
+.home-transfers-heading button {
+  min-height: 39px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px;
+  border: 1px solid rgba(215, 186, 105, 0.25);
+  border-radius: 9px !important;
+  background: rgba(215, 186, 105, 0.07);
+  color: #ead9a5;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.home-transfers-area .transfer-board.compact {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 13px;
+  margin-top: 0;
+}
+
+.home-transfers-area .transfer-section-header {
+  min-height: 64px;
+  padding: 10px 12px;
+}
+
+.home-transfers-area .transfer-section-header h3 {
+  font-size: 19px;
+}
+
+.home-transfers-area .transfer-section-header p {
+  display: none;
+}
+
+.home-transfers-area .transfer-card-grid {
+  grid-template-columns:
+    repeat(2, minmax(210px, 1fr));
+  gap: 8px;
+  padding: 9px;
+}
+
+.home-transfers-area .transfer-card.compact {
+  min-height: 198px;
+  gap: 8px;
+  padding: 9px;
+}
+
+.home-transfers-area .transfer-card.compact .transfer-player-row {
+  grid-template-columns: 46px minmax(0, 1fr);
+}
+
+.home-transfers-area .transfer-card.compact .player-photo-chip {
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 46px !important;
+  min-height: 46px !important;
+}
+
+.home-transfers-area .transfer-card.compact .transfer-player-copy strong {
+  font-size: 14px;
+}
+
+.home-transfers-area .transfer-card.compact .transfer-route {
+  min-height: 34px;
+  padding: 6px 7px;
+}
+
+.home-transfers-area .transfer-card.compact .transfer-card-bottom > div strong {
+  font-size: 14px;
+}
+
+/* =========================================================
+   NOTIFICACIONES
+   ========================================================= */
+
+.notification-history-toolbar span,
+.notification-history-item time {
+  font-size: 11px !important;
+}
+
+.notification-history-toolbar strong {
+  font-size: 22px !important;
+}
+
+.notification-history-content strong {
+  font-size: 15px !important;
+}
+
+.notification-history-content p {
+  font-size: 13px !important;
+  line-height: 1.48;
+}
+
+.notification-history-meta {
+  font-size: 11px !important;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1350px) {
+  .transfer-card-grid {
+    grid-template-columns:
+      repeat(3, minmax(230px, 1fr));
+  }
+
+  .home-transfers-area .transfer-board.compact {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .transfer-card-grid {
+    grid-template-columns:
+      repeat(2, minmax(220px, 1fr));
+  }
+
+  .home-transfers-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-movements-button {
+    display: none;
+  }
+
+  .transfer-card-grid,
+  .home-transfers-area .transfer-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .transfer-card {
+    min-height: 220px;
+  }
+
+  .transfer-section-header h3 {
+    font-size: 21px;
+  }
+}

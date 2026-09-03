@@ -28,6 +28,11 @@ const NAVIGATION = [
     icon: "⌑",
   },
   {
+    key: "transfers",
+    label: "Fichajes",
+    icon: "↗",
+  },
+  {
     key: "xi",
     label: "Mejor XI",
     icon: "☆",
@@ -173,7 +178,8 @@ export default function DashboardShell({
   data,
   marketCount,
   movesCount,
-  notificationCount,
+  unreadNotificationCount,
+  onOpenNotifications,
   refreshing,
   manualRefreshRemaining,
   onRefresh,
@@ -477,21 +483,32 @@ export default function DashboardShell({
 
             <button
               type="button"
-              className="dashboard-notification-button"
+              className="dashboard-movements-button"
               onClick={() =>
                 onNavigate(
                   "moves"
                 )
               }
-              title="Ver movimientos y avisos"
+              title="Pujas, ventas y movimientos"
             >
-              ♧
+              ⇄
+            </button>
 
-              {notificationCount >
+            <button
+              type="button"
+              className="dashboard-real-notification-button"
+              onClick={
+                onOpenNotifications
+              }
+              title="Notificaciones reales detectadas"
+            >
+              🔔
+
+              {unreadNotificationCount >
                 0 && (
                 <span>
                   {Math.min(
-                    notificationCount,
+                    unreadNotificationCount,
                     99
                   )}
                 </span>
