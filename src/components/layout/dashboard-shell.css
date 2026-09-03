@@ -3269,3 +3269,500 @@ body {
     font-size: 9px !important;
   }
 }
+
+
+/* =========================================================
+   DASHBOARD v3 · LEGIBILIDAD + NOTIFICACIONES REALES
+   ========================================================= */
+
+/*
+ * Escala tipográfica general.
+ * Se mantienen los mismos layouts, pero textos y controles dejan
+ * de verse diminutos en monitores Full HD / 2K.
+ */
+.dashboard-shell {
+  font-size: 15px;
+}
+
+.dashboard-sidebar-brand strong {
+  font-size: 17px !important;
+}
+
+.dashboard-sidebar-brand span {
+  font-size: 9px !important;
+}
+
+.dashboard-nav-item {
+  min-height: 54px !important;
+}
+
+.dashboard-nav-icon {
+  font-size: 20px !important;
+}
+
+.dashboard-nav-label {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+}
+
+.dashboard-nav-badge {
+  min-width: 27px !important;
+  height: 24px !important;
+  font-size: 10px !important;
+}
+
+.dashboard-sidebar-mini-stats span {
+  font-size: 9px !important;
+}
+
+.dashboard-sidebar-mini-stats strong {
+  font-size: 12px !important;
+}
+
+.dashboard-topbar {
+  min-height: 78px !important;
+}
+
+.dashboard-topnav button {
+  min-height: 50px !important;
+  padding: 0 15px !important;
+  font-size: 14px !important;
+}
+
+.dashboard-topnav button span {
+  font-size: 19px !important;
+}
+
+.dashboard-topnav button b {
+  font-size: 14px !important;
+}
+
+.dashboard-manager strong {
+  font-size: 13px !important;
+}
+
+.dashboard-manager span {
+  font-size: 9px !important;
+}
+
+.dashboard-api-pill {
+  height: 46px !important;
+}
+
+.dashboard-api-pill small {
+  font-size: 9px !important;
+}
+
+.dashboard-refresh,
+.dashboard-movements-button,
+.dashboard-real-notification-button {
+  width: 46px !important;
+  height: 46px !important;
+}
+
+/* =========================================================
+   BOTONES SUPERIORES SEPARADOS
+   ========================================================= */
+
+.dashboard-movements-button,
+.dashboard-real-notification-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--dash-border);
+  border-radius: 12px !important;
+  background: rgba(242, 231, 189, 0.04);
+  color: var(--dash-cream);
+  cursor: pointer;
+  font-size: 20px;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    transform 0.16s ease;
+}
+
+.dashboard-movements-button:hover,
+.dashboard-real-notification-button:hover {
+  border-color: rgba(215, 186, 105, 0.52);
+  background: rgba(215, 186, 105, 0.11);
+  transform: translateY(-1px);
+}
+
+.dashboard-real-notification-button > span {
+  position: absolute;
+  right: -5px;
+  top: -6px;
+  min-width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+  border: 2px solid #052218;
+  border-radius: 999px !important;
+  background: #c72f48;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 950;
+}
+
+/* El botón viejo con el contador histórico deja de existir. */
+.dashboard-notification-button {
+  display: none !important;
+}
+
+/* =========================================================
+   CONTENIDO GENERAL
+   ========================================================= */
+
+.dashboard-content {
+  font-size: 15px;
+}
+
+.page-view .section-header {
+  padding: 16px 18px !important;
+}
+
+.page-view .section-header h2 {
+  font-size: 36px !important;
+  line-height: 1.08 !important;
+}
+
+.page-view .section-header p {
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+}
+
+.page-view .section-label {
+  font-size: 10px !important;
+}
+
+button {
+  font-size: 14px;
+}
+
+/* =========================================================
+   INICIO
+   ========================================================= */
+
+.home-club-identity span {
+  font-size: 15px !important;
+}
+
+.home-club-identity p {
+  font-size: 16px !important;
+}
+
+.home-competition-summary span {
+  font-size: 9px !important;
+}
+
+.home-competition-summary strong {
+  font-size: 25px !important;
+}
+
+.home-competition-summary small {
+  font-size: 9px !important;
+}
+
+.home-stat-card {
+  min-height: 86px !important;
+}
+
+.home-stat-card small {
+  font-size: 10px !important;
+}
+
+.home-stat-card strong {
+  font-size: 20px !important;
+}
+
+.home-stat-card div > span {
+  font-size: 10px !important;
+}
+
+.home-panel > header {
+  min-height: 64px !important;
+}
+
+.home-panel > header span {
+  font-size: 9px !important;
+}
+
+.home-panel > header h2 {
+  font-size: 22px !important;
+}
+
+.home-panel > header button {
+  min-height: 38px !important;
+  font-size: 12px !important;
+}
+
+.home-team-player {
+  min-height: 75px !important;
+}
+
+.home-team-player-copy > strong {
+  font-size: 14px !important;
+}
+
+.home-team-player-copy > span {
+  font-size: 10px !important;
+}
+
+.home-player-status {
+  font-size: 10px !important;
+}
+
+.home-player-points strong {
+  font-size: 21px !important;
+}
+
+.home-player-points span {
+  font-size: 9px !important;
+}
+
+.home-market-table-head {
+  font-size: 9px !important;
+}
+
+.home-market-name strong {
+  font-size: 13px !important;
+}
+
+.home-market-name span {
+  font-size: 9px !important;
+}
+
+.home-market-position {
+  font-size: 10px !important;
+}
+
+.home-market-value {
+  font-size: 11px !important;
+}
+
+.home-market-change {
+  font-size: 10px !important;
+}
+
+.home-xi-summary > span,
+.home-xi-summary > small,
+.home-xi-summary > div span {
+  font-size: 9px !important;
+}
+
+.home-xi-summary > strong {
+  font-size: 23px !important;
+}
+
+.home-xi-summary > div b {
+  font-size: 20px !important;
+}
+
+.home-mini-line b {
+  max-width: 88px !important;
+  font-size: 8px !important;
+}
+
+/* =========================================================
+   MI EQUIPO
+   ========================================================= */
+
+.player-chip {
+  padding: 13px !important;
+}
+
+.chip-name strong {
+  font-size: 16px !important;
+}
+
+.chip-club,
+.club-identity {
+  font-size: 12px !important;
+}
+
+.chip-stats small {
+  font-size: 9px !important;
+}
+
+.chip-stats strong {
+  font-size: 14px !important;
+}
+
+.detail-button,
+.chip-operation-button,
+.operation-button {
+  min-height: 38px !important;
+  font-size: 12px !important;
+}
+
+/* =========================================================
+   MERCADO
+   ========================================================= */
+
+.market-chip {
+  padding: 15px !important;
+}
+
+.market-chip-name strong {
+  font-size: 18px !important;
+}
+
+.market-chip .club-identity {
+  font-size: 12px !important;
+}
+
+.market-chip-stats span {
+  font-size: 9px !important;
+}
+
+.market-chip-stats strong {
+  font-size: 15px !important;
+}
+
+.market-filters button,
+.market-position-filter-button {
+  min-height: 44px !important;
+  font-size: 12px !important;
+}
+
+.market-status-countdown strong {
+  font-size: 30px !important;
+}
+
+/* =========================================================
+   MOVIMIENTOS
+   ========================================================= */
+
+.my-market-activity-head h3 {
+  font-size: 24px !important;
+}
+
+.my-market-activity-head p {
+  font-size: 13px !important;
+}
+
+.my-market-move-name strong {
+  font-size: 17px !important;
+}
+
+.my-market-move-metrics span {
+  font-size: 9px !important;
+}
+
+.my-market-move-metrics strong {
+  font-size: 15px !important;
+}
+
+/* =========================================================
+   MEJOR XI
+   ========================================================= */
+
+.xi-topbar h2 {
+  font-size: 32px !important;
+}
+
+.xi-topbar p {
+  font-size: 14px !important;
+}
+
+.pitch-player > strong {
+  font-size: 12px !important;
+}
+
+.pitch-points {
+  font-size: 10px !important;
+}
+
+/* =========================================================
+   PROTECCIÓN
+   ========================================================= */
+
+.api-protection-panel {
+  font-size: 14px;
+}
+
+.api-protection-metrics span,
+.api-next-refresh span {
+  font-size: 10px !important;
+}
+
+.api-protection-metrics strong {
+  font-size: 26px !important;
+}
+
+.protection-info-grid strong {
+  font-size: 15px !important;
+}
+
+.protection-info-grid p {
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+
+/* =========================================================
+   HISTORIAL DE NOTIFICACIONES
+   ========================================================= */
+
+.notification-history-toolbar strong {
+  font-size: 23px !important;
+}
+
+.notification-history-toolbar span,
+.notification-history-item time,
+.notification-history-meta {
+  font-size: 11px !important;
+}
+
+.notification-history-content strong {
+  font-size: 15px !important;
+}
+
+.notification-history-content p {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1250px) {
+  .dashboard-topnav button b {
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .dashboard-mobile-titlebar span {
+    font-size: 14px !important;
+  }
+
+  .dashboard-mobile-titlebar button {
+    font-size: 10px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-topbar {
+    min-height: 68px !important;
+  }
+
+  .dashboard-refresh,
+  .dashboard-real-notification-button {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .dashboard-movements-button {
+    display: none;
+  }
+
+  .page-view .section-header h2 {
+    font-size: 29px !important;
+  }
+
+  .home-club-identity p {
+    font-size: 13px !important;
+  }
+}

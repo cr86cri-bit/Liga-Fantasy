@@ -28,6 +28,9 @@ const MANUAL_REFRESH_COOLDOWN_MS =
 const NOTIFICATION_HISTORY_KEY =
   "liga-fantasy-notification-history-v1";
 
+const NOTIFICATION_LAST_READ_KEY =
+  "liga-fantasy-notification-last-read-v1";
+
 const SOFASCORE_PROFILE_CACHE_KEY =
   "liga-fantasy-sports-sources-v1";
 
@@ -255,6 +258,7 @@ export {
   API_LEADER_HEARTBEAT_MS,
   MANUAL_REFRESH_COOLDOWN_MS,
   NOTIFICATION_HISTORY_KEY,
+  NOTIFICATION_LAST_READ_KEY,
   SOFASCORE_PROFILE_CACHE_KEY,
   readLocalDashboardCache,
   createTabId,

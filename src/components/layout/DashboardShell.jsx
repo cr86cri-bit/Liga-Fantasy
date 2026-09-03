@@ -164,7 +164,8 @@ export default function DashboardShell({
   data,
   marketCount,
   movesCount,
-  notificationCount,
+  unreadNotificationCount,
+  onOpenNotifications,
   refreshing,
   manualRefreshRemaining,
   onRefresh,
@@ -468,21 +469,39 @@ export default function DashboardShell({
 
             <button
               type="button"
-              className="dashboard-notification-button"
+              className="dashboard-movements-button"
               onClick={() =>
                 onNavigate(
                   "moves"
                 )
               }
-              title="Ver movimientos y avisos"
+              title="Ver pujas y ventas"
+              aria-label="Movimientos: pujas y ventas"
             >
-              ♧
+              ⇄
+            </button>
 
-              {notificationCount >
+            <button
+              type="button"
+              className="dashboard-real-notification-button"
+              onClick={
+                onOpenNotifications
+              }
+              title="Ver notificaciones"
+              aria-label={`Notificaciones${
+                unreadNotificationCount >
+                0
+                  ? `, ${unreadNotificationCount} sin leer`
+                  : ""
+              }`}
+            >
+              🔔
+
+              {unreadNotificationCount >
                 0 && (
                 <span>
                   {Math.min(
-                    notificationCount,
+                    unreadNotificationCount,
                     99
                   )}
                 </span>

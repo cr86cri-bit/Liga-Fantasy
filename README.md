@@ -726,3 +726,45 @@ peticiones para consultar plantillas de otros managers.
 - pestaña líder;
 - scheduler;
 - circuit breaker.
+
+## Legibilidad y notificaciones reales
+
+### Barra superior
+
+El botón que anteriormente mostraba un número como `78` mezclaba dos conceptos:
+abría Movimientos, pero el contador provenía del historial completo de avisos.
+
+Ahora son dos controles distintos:
+
+- **⇄ Movimientos**: abre las pujas y ventas y no muestra un contador.
+- **🔔 Notificaciones**: abre el historial de notificaciones detectadas.
+
+El badge de la campana muestra exclusivamente avisos **no leídos**. Al abrir la
+campana, el contador vuelve a cero, pero el historial no se borra.
+
+La última lectura se guarda en:
+
+`liga-fantasy-notification-last-read-v1`
+
+Por tanto, recargar la página no vuelve a mostrar como nuevas las
+notificaciones que ya se revisaron.
+
+### Texto
+
+Se aumentó la escala tipográfica de:
+
+- sidebar;
+- menú superior;
+- usuario y estado API;
+- Inicio;
+- métricas;
+- Mi equipo;
+- Mercado;
+- Movimientos;
+- Mejor XI;
+- Protección;
+- historial de notificaciones.
+
+No se añadió ninguna llamada nueva a Biwenger. La modificación de
+notificaciones funciona únicamente con el historial local que el sistema ya
+generaba.
