@@ -583,3 +583,57 @@ También se amplió ligeramente el área React sobre el monitor de cada render,
 aprovechando mejor la superficie disponible.
 
 Este cambio es exclusivamente visual y no añade peticiones a Biwenger.
+
+## Dashboard general con sidebar plegable
+
+Se eliminó por completo la navegación visual mediante oficinas y monitores.
+
+La aplicación utiliza ahora un único dashboard general inspirado en un panel
+profesional de gestión deportiva:
+
+- sidebar izquierdo;
+- menú superior;
+- sidebar plegable/expandible;
+- estado del sidebar persistido en `localStorage`;
+- navegación duplicada en lateral y superior;
+- diseño responsive con drawer lateral en móvil;
+- Inicio con resumen de club;
+- vista previa de plantilla;
+- resumen de mercado;
+- mini Mejor XI;
+- estado de API visible permanentemente.
+
+### Inicio
+
+La nueva pantalla Inicio reutiliza exclusivamente la información que ya existe
+en el dashboard:
+
+- posición;
+- puntos disponibles en la respuesta;
+- número de jugadores;
+- valor del equipo;
+- saldo;
+- puja máxima;
+- patrimonio;
+- mejores jugadores de la plantilla;
+- jugadores destacados del mercado;
+- alineación actual / Mejor XI.
+
+No realiza llamadas nuevas a Biwenger.
+
+### Módulos
+
+Mi equipo, Mercado, Movimientos, Mejor XI, Rivales y Protección conservan sus
+componentes y funcionalidades, pero se muestran directamente dentro del
+dashboard, sin imágenes de oficina alrededor.
+
+### Eliminado
+
+Se eliminaron del proyecto:
+
+- `src/components/office/`
+- `src/screens/Campus/`
+- `public/offices/`
+- `public/campus/`
+
+Esto reduce peso y simplifica la interfaz.

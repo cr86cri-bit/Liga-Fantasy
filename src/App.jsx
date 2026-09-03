@@ -6,16 +6,14 @@ import { RealActionModal } from "./components/actions/RealActionModal.jsx";
 import { MarketPositionFilterModal } from "./components/market/MarketComponents.jsx";
 import { RivalDetailModal } from "./components/rivals/Rivals.jsx";
 import { Toasts, NotificationHistoryModal } from "./components/notifications/Notifications.jsx";
-import CampusScreen from "./screens/Campus/CampusScreen.jsx";
 import TeamScreen from "./screens/Team/TeamScreen.jsx";
 import MarketScreen from "./screens/Market/MarketScreen.jsx";
 import RivalsScreen from "./screens/Rivals/RivalsScreen.jsx";
 import ProtectionScreen from "./screens/Protection/ProtectionScreen.jsx";
 import MovementsScreen from "./screens/Movements/MovementsScreen.jsx";
 import BestXIScreen from "./screens/BestXI/BestXIScreen.jsx";
-import ClubHeader from "./components/layout/ClubHeader.jsx";
-import FinanceMetrics from "./components/layout/FinanceMetrics.jsx";
-import ClubTabs from "./components/layout/ClubTabs.jsx";
+import DashboardShell from "./components/layout/DashboardShell.jsx";
+import HomeScreen from "./screens/Home/HomeScreen.jsx";
 
 export default function App() {
   const initialDashboardRef =
@@ -34,7 +32,7 @@ export default function App() {
       null
   );
 
-  const [tab, setTab] = useState("campus");
+  const [tab, setTab] = useState("home");
   const [marketFilter, setMarketFilter] = useState("all");
   const [marketPosition, setMarketPosition] = useState("all");
   const [positionFilterOpen, setPositionFilterOpen] = useState(false);
@@ -1580,164 +1578,208 @@ const handleManualRefresh =
     );
   }
 
-  const isCampus =
-    tab ===
-    "campus";
-
   return (
-    <div
-      className={`app ${
-        isCampus
-          ? "app-campus-mode"
-          : "app-office-mode"
-      }`}
-    >
-      <Toasts items={toasts} onClose={removeToast} />
+    <div className="app dashboard-app">
+      <Toasts
+        items={toasts}
+        onClose={removeToast}
+      />
 
-      {isCampus && (
-        <>
-          <ClubHeader
-            data={data}
-            refreshing={refreshing}
-            manualRefreshRemaining={manualRefreshRemaining}
-            onRefresh={handleManualRefresh}
-          />
+      <DashboardShell
+        tab={tab}
+        onNavigate={setTab}
+        data={data}
+        marketCount={market.length}
+        movesCount={
+          myBids.length +
+          mySales.length
+        }
+        notificationCount={
+          notificationHistory.length
+        }
+        refreshing={refreshing}
+        manualRefreshRemaining={
+          manualRefreshRemaining
+        }
+        onRefresh={
+          handleManualRefresh
+        }
+      >
+        {error && (
+          <div className="warning">
+            {error}
+          </div>
+        )}
 
-          <FinanceMetrics
+        {tab ===
+          "home" && (
+          <HomeScreen
             data={data}
-          />
-
-          <ClubTabs
-            tab={tab}
-            onChange={setTab}
-            data={data}
-            marketCount={market.length}
-            movesCount={
-              myBids.length +
-              mySales.length
+            market={market}
+            onNavigate={setTab}
+            onTeamDetails={
+              setSelectedTeamPlayer
+            }
+            onMarketDetails={
+              setSelectedMarketPlayer
             }
           />
-        </>
-      )}
+        )}
 
-      {error && (
-        <div
-          className={
-            isCampus
-              ? "warning"
-              : "warning office-warning"
-          }
-        >
-          {error}
-        </div>
-      )}
+        {tab ===
+          "team" && (
+          <TeamScreen
+            squad={
+              data?.squad ||
+              []
+            }
+            onDetails={
+              setSelectedTeamPlayer
+            }
+            onSell={
+              openSellAction
+            }
+          />
+        )}
 
-      {tab === "campus" && (
-        <CampusScreen
-          data={data}
-          onOpen={setTab}
-          onRefresh={handleManualRefresh}
-          refreshing={refreshing}
-        />
-      )}
+        {tab ===
+          "market" && (
+          <MarketScreen
+            marketFilter={
+              marketFilter
+            }
+            setMarketFilter={
+              setMarketFilter
+            }
+            marketPosition={
+              marketPosition
+            }
+            setPositionFilterOpen={
+              setPositionFilterOpen
+            }
+            marketCounts={
+              marketCounts
+            }
+            marketPositionCounts={
+              marketPositionCounts
+            }
+            data={
+              data
+            }
+            market={
+              market
+            }
+            filteredMarket={
+              filteredMarket
+            }
+            now={
+              now
+            }
+            notificationPermission={
+              notificationPermission
+            }
+            onEnableNotifications={
+              enableNotifications
+            }
+            historyCount={
+              notificationHistory.length
+            }
+            onOpenHistory={() =>
+              setNotificationHistoryOpen(
+                true
+              )
+            }
+            onDetails={
+              setSelectedMarketPlayer
+            }
+            onBid={
+              openBidAction
+            }
+          />
+        )}
 
-      {tab === "team" && (
-        <TeamScreen
-          data={data}
-          squad={data?.squad || []}
-          onDetails={setSelectedTeamPlayer}
-          onSell={openSellAction}
-          onNavigate={setTab}
-        />
-      )}
+        {tab ===
+          "moves" && (
+          <MovementsScreen
+            bids={
+              myBids
+            }
+            sales={
+              mySales
+            }
+            now={
+              now
+            }
+            onDetails={
+              setSelectedMarketPlayer
+            }
+          />
+        )}
 
-      {tab === "market" && (
-        <MarketScreen
-          marketFilter={marketFilter}
-          setMarketFilter={setMarketFilter}
-          marketPosition={marketPosition}
-          setPositionFilterOpen={setPositionFilterOpen}
-          marketCounts={marketCounts}
-          marketPositionCounts={marketPositionCounts}
-          data={data}
-          market={market}
-          filteredMarket={filteredMarket}
-          now={now}
-          notificationPermission={notificationPermission}
-          onEnableNotifications={enableNotifications}
-          historyCount={notificationHistory.length}
-          onOpenHistory={() => setNotificationHistoryOpen(true)}
-          onDetails={setSelectedMarketPlayer}
-          onBid={openBidAction}
-          onNavigate={setTab}
-        />
-      )}
+        {tab ===
+          "xi" && (
+          <BestXIScreen
+            bestXI={
+              data?.bestXI
+            }
+            squad={
+              data?.squad ||
+              []
+            }
+            savedLineup={
+              data?.lineup
+            }
+            lineupSettings={
+              data
+                ?.league
+                ?.settings
+            }
+            onPlayerDetails={
+              setSelectedXIPlayer
+            }
+            onSaveLineup={
+              saveLineup
+            }
+            saving={
+              lineupSaving
+            }
+            saveError={
+              lineupError
+            }
+          />
+        )}
 
-      {tab === "moves" && (
-        <MovementsScreen
-          data={data}
-          bids={myBids}
-          sales={mySales}
-          now={now}
-          onDetails={setSelectedMarketPlayer}
-          onNavigate={setTab}
-        />
-      )}
+        {tab ===
+          "rivals" && (
+          <RivalsScreen
+            rivals={
+              data?.rivals ||
+              []
+            }
+            loading={
+              rivalsLoading
+            }
+            onDetails={
+              setSelectedRival
+            }
+          />
+        )}
 
-      {tab === "xi" && (
-        <BestXIScreen
-          data={data}
-          onNavigate={setTab}
-          bestXI={data?.bestXI}
-          squad={data?.squad || []}
-          savedLineup={data?.lineup}
-          lineupSettings={data?.league?.settings}
-          onPlayerDetails={setSelectedXIPlayer}
-          onSaveLineup={saveLineup}
-          saving={lineupSaving}
-          saveError={lineupError}
-        />
-      )}
-
-      {tab === "rivals" && (
-        <RivalsScreen
-          data={data}
-          rivals={data?.rivals || []}
-          loading={rivalsLoading}
-          onDetails={setSelectedRival}
-          onNavigate={setTab}
-        />
-      )}
-
-      {tab === "protection" && (
-        <ProtectionScreen
-          data={data}
-          system={data?.system}
-          isLeader={isApiLeader}
-          now={now}
-          onNavigate={setTab}
-        />
-      )}
-
-      {isCampus && (
-        <footer>
-          <span>
-            Operaciones reales activadas · Siempre requieren confirmación
-          </span>
-
-          <span>
-            Última sincronización:{" "}
-            {data?.syncedAt
-              ? new Date(
-                  data.syncedAt
-                ).toLocaleString(
-                  "es-BO"
-                )
-              : "-"}
-          </span>
-        </footer>
-      )}
-
+        {tab ===
+          "protection" && (
+          <ProtectionScreen
+            system={
+              data?.system
+            }
+            isLeader={
+              isApiLeader
+            }
+            now={
+              now
+            }
+          />
+        )}
+      </DashboardShell>
 
 
 <NotificationHistoryModal

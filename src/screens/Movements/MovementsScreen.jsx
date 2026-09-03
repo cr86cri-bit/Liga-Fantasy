@@ -1,20 +1,13 @@
-import OfficeScene from "../../components/office/OfficeScene.jsx";
 import { MarketMovementsView } from "../../components/market/MarketComponents.jsx";
 
-export default function MovementsScreen({
-  data,
-  onNavigate,
-  ...props
-}) {
+export default function MovementsScreen(
+  props
+) {
   return (
-    <OfficeScene
-      section="moves"
-      data={data}
-      onNavigate={onNavigate}
-    >
+    <div className="page-view">
       <MarketMovementsView
         {...props}
       />
-    </OfficeScene>
+    </div>
   );
 }

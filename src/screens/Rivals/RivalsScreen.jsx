@@ -1,51 +1,42 @@
-import OfficeScene from "../../components/office/OfficeScene.jsx";
 import { SectionHeader } from "../../components/ui/SectionHeader.jsx";
 import { RivalLeagueTable } from "../../components/rivals/Rivals.jsx";
 
 export default function RivalsScreen({
-  data,
   rivals,
   loading,
   onDetails,
-  onNavigate,
 }) {
   return (
-    <OfficeScene
-      section="rivals"
-      data={data}
-      onNavigate={onNavigate}
-    >
-      <main>
-        <SectionHeader
-          label="CLASIFICACIÓN DE RIVALES"
-          title="Tabla de tu liga"
-          description="Comparación rápida de fuerza, plantilla y necesidades."
-        />
+    <div className="page-view">
+      <SectionHeader
+        label="CLASIFICACIÓN DE RIVALES"
+        title="Tabla de tu liga"
+        description="Comparación rápida de fuerza, plantilla y necesidades."
+      />
 
-        {loading &&
-        !(rivals || []).length
-          ? (
-            <div className="rivals-loading-card">
-              <div className="loader small" />
+      {loading &&
+      !(rivals || []).length
+        ? (
+          <div className="rivals-loading-card">
+            <div className="loader small" />
 
-              <div>
-                <strong>
-                  Cargando rivales de forma segura…
-                </strong>
+            <div>
+              <strong>
+                Cargando rivales de forma segura…
+              </strong>
 
-                <p>
-                  Se consulta una plantilla cada vez con una separación mínima de 4 segundos. Puede tardar un poco, pero evita ráfagas contra Biwenger.
-                </p>
-              </div>
+              <p>
+                Se consulta una plantilla cada vez con una separación mínima de 4 segundos.
+              </p>
             </div>
-          )
-          : (
-            <RivalLeagueTable
-              rivals={rivals || []}
-              onDetails={onDetails}
-            />
-          )}
-      </main>
-    </OfficeScene>
+          </div>
+        )
+        : (
+          <RivalLeagueTable
+            rivals={rivals || []}
+            onDetails={onDetails}
+          />
+        )}
+    </div>
   );
 }

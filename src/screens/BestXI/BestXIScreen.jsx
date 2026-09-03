@@ -1,20 +1,13 @@
-import OfficeScene from "../../components/office/OfficeScene.jsx";
 import { BestXI } from "../../components/lineup/BestXI.jsx";
 
-export default function BestXIScreen({
-  data,
-  onNavigate,
-  ...props
-}) {
+export default function BestXIScreen(
+  props
+) {
   return (
-    <OfficeScene
-      section="xi"
-      data={data}
-      onNavigate={onNavigate}
-    >
+    <div className="page-view">
       <BestXI
         {...props}
       />
-    </OfficeScene>
+    </div>
   );
 }
