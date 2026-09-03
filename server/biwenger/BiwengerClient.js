@@ -182,6 +182,13 @@ export class BiwengerClient {
     this.rivalsLoadedAt =
       0;
 
+    /*
+     * Backoff aislado del tablón legacy.
+     * No afecta Mercado, Equipo, Alineación, Rivales ni operaciones.
+     */
+    this.transfersUnavailableUntil =
+      0;
+
     this.guard =
       new ApiGuard();
 
@@ -759,6 +766,24 @@ export class BiwengerClient {
 async obtenerNoticiasFichajes({
   force = false,
 } = {}) {
+  if (
+    Date.now() <
+    Number(
+      this.transfersUnavailableUntil ||
+      0
+    )
+  ) {
+    const error =
+      new Error(
+        "El tablón de fichajes está temporalmente en espera tras un fallo del endpoint legacy."
+      );
+
+    error.code =
+      "BIWENGER_TRANSFERS_BACKOFF";
+
+    throw error;
+  }
+
   return this.cache.get(
     "transfers",
     {
@@ -793,11 +818,31 @@ async obtenerNoticiasFichajes({
 
               options: {
                 headers:
-                  this.crearHeaders(
-                    true
-                  ),
+                  this.crearHeadersLegacyLeague(),
               },
             });
+
+          /*
+           * Si el endpoint legacy devuelve un 4xx propio, evitamos
+           * repetir la consulta desde Inicio y Fichajes durante 10 min.
+           * Este backoff NO bloquea el resto de Biwenger.
+           */
+          if (
+            response.status >=
+              400 &&
+            response.status <
+              500 &&
+            response.status !==
+              401 &&
+            response.status !==
+              403 &&
+            response.status !==
+              429
+          ) {
+            this.transfersUnavailableUntil =
+              Date.now() +
+              10 * 60 * 1000;
+          }
 
           if (
             response.status ===
@@ -3372,6 +3417,39 @@ async guardarAlineacion({
       null;
 
     return error;
+  }
+
+  crearHeadersLegacyLeague() {
+    /*
+     * /api/v1/league/news pertenece a la API legacy.
+     *
+     * La liga se identifica con X-League.
+     * Este endpoint NO necesita X-User.
+     */
+    const headers =
+      this.crearHeaders(
+        false
+      );
+
+    headers[
+      "X-League"
+    ] =
+      String(
+        this.leagueId
+      );
+
+    headers[
+      "Referer"
+    ] =
+      "https://biwenger.as.com/";
+
+    /*
+     * Defensa adicional: este endpoint legacy nunca
+     * debe enviar X-User.
+     */
+    delete headers["X-User"];
+
+    return headers;
   }
 
   crearHeaders(

@@ -748,3 +748,20 @@ También se aumentaron tamaños de texto en:
 - mercado;
 - fichajes;
 - historial de notificaciones.
+
+## Corrección de `Biwenger transfers: Invalid ID`
+
+El endpoint de fichajes usa:
+
+`GET https://biwenger.as.com/api/v1/league/news`
+
+La versión anterior reutilizaba `crearHeaders(true)`, que enviaba `X-League`
+y también `X-User`.
+
+El tablón legacy identifica la liga con `X-League`. Ahora utiliza
+`crearHeadersLegacyLeague()`, que conserva Authorization, X-Version, X-Lang y
+X-League, pero elimina X-User.
+
+También se añadió un backoff local de 10 minutos si únicamente ese endpoint
+legacy devuelve otro error 4xx. Ese backoff no bloquea Mercado, Equipo,
+Alineación, Rivales, pujas ni ventas.
