@@ -265,6 +265,12 @@ a {
     );
 }
 
+.player-photo-mini {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+}
+
 .player-photo-chip {
   width: 54px;
   height: 54px;

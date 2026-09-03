@@ -637,3 +637,40 @@ Se eliminaron del proyecto:
 - `public/campus/`
 
 Esto reduce peso y simplifica la interfaz.
+
+## Correcciones de Inicio y Sidebar
+
+Se corrigieron tres problemas visuales del nuevo dashboard:
+
+### Escudo del sidebar
+
+El dashboard estaba intentando cargar:
+
+`/brand/canadores-crest.webp`
+
+pero el asset real incluido en el proyecto es:
+
+`/brand/canadores-crest.png`
+
+El sidebar y la pantalla Inicio utilizan ahora el PNG correcto.
+
+### Mercado deformado en Inicio
+
+`HomeScreen` utilizaba `PlayerPhoto size="mini"`, pero el proyecto no tenía una
+regla CSS para `.player-photo-mini`. Las imágenes quedaban con su tamaño
+intrínseco y podían ocupar cientos de píxeles.
+
+Se agregó un tamaño fijo de 34×34 px y se reforzó el grid del resumen de
+Mercado para impedir que una foto o un texto agrande una fila.
+
+### Parte inferior del sidebar
+
+El sidebar tiene ahora filas de altura controlada para:
+
+- escudo;
+- navegación;
+- franjas del club;
+- saldo + botón de plegado.
+
+Las franjas y el pie ya no pueden crecer o desbordarse, y se mantienen
+alineados tanto expandido como plegado.

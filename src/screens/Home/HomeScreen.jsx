@@ -451,7 +451,7 @@ export default function HomeScreen({
       <section className="home-hero">
         <div className="home-club-identity">
           <img
-            src="/brand/canadores-crest.webp"
+            src="/brand/canadores-crest.png"
             alt="Cañadores FC"
           />
 

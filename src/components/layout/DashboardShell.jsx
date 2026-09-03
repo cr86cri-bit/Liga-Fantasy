@@ -270,7 +270,7 @@ export default function DashboardShell({
           title="Ir al inicio"
         >
           <img
-            src="/brand/canadores-crest.webp"
+            src="/brand/canadores-crest.png"
             alt="Cañadores FC"
           />
 
