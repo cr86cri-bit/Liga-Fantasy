@@ -10,7 +10,6 @@ import {
   PlayerPhoto,
   TeamCrest,
 } from "../../components/ui/PlayerUI.jsx";
-import TransferBoard from "../../components/transfers/TransferBoard.jsx";
 
 function StatCard({
   icon,
@@ -788,48 +787,6 @@ export default function HomeScreen({
             </div>
           </article>
         </div>
-      </section>
-
-      <section className="home-transfers-area">
-        <div className="home-transfers-heading">
-          <div>
-            <span>
-              MERCADO DE LA LIGA
-            </span>
-
-            <h2>
-              Mercado de fichajes y fichajes
-            </h2>
-
-            <p>
-              Últimas compras y traspasos realizados en The Best League.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() =>
-              onNavigate(
-                "transfers"
-              )
-            }
-          >
-            Ver todos los fichajes
-            <b>
-              →
-            </b>
-          </button>
-        </div>
-
-        <TransferBoard
-          data={
-            data?.transferNews
-          }
-          compact
-          onPlayerDetails={
-            onMarketDetails
-          }
-        />
       </section>
     </div>
   );

@@ -1,20 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { API_CHANNEL_NAME, API_LEADER_HEARTBEAT_MS, API_LEADER_KEY, API_LEADER_LEASE_MS, MANUAL_REFRESH_COOLDOWN_MS, MARKET_SNAPSHOT_KEY, NOTIFICATION_HISTORY_KEY, NOTIFICATION_LAST_READ_KEY, DASHBOARD_LOCAL_CACHE_KEY, createTabId, readLeaderLease, readLocalDashboardCache, writeLeaderLease, formatMoney, toMilliseconds } from "./utils/app.js";
+import { API_CHANNEL_NAME, API_LEADER_HEARTBEAT_MS, API_LEADER_KEY, API_LEADER_LEASE_MS, MANUAL_REFRESH_COOLDOWN_MS, MARKET_SNAPSHOT_KEY, NOTIFICATION_HISTORY_KEY, DASHBOARD_LOCAL_CACHE_KEY, createTabId, readLeaderLease, readLocalDashboardCache, writeLeaderLease, formatMoney, toMilliseconds } from "./utils/app.js";
 import { createMarketSnapshot, compareMarketSnapshots, readNotificationHistory, saveNotificationHistory } from "./utils/marketNotifications.js";
 import { PlayerDetailModal } from "./components/players/PlayerDetailModal.jsx";
 import { RealActionModal } from "./components/actions/RealActionModal.jsx";
 import { MarketPositionFilterModal } from "./components/market/MarketComponents.jsx";
-import { RivalDetailModal } from "./components/rivals/Rivals.jsx";
 import { Toasts, NotificationHistoryModal } from "./components/notifications/Notifications.jsx";
 import TeamScreen from "./screens/Team/TeamScreen.jsx";
 import MarketScreen from "./screens/Market/MarketScreen.jsx";
-import RivalsScreen from "./screens/Rivals/RivalsScreen.jsx";
 import ProtectionScreen from "./screens/Protection/ProtectionScreen.jsx";
 import MovementsScreen from "./screens/Movements/MovementsScreen.jsx";
 import BestXIScreen from "./screens/BestXI/BestXIScreen.jsx";
 import DashboardShell from "./components/layout/DashboardShell.jsx";
 import HomeScreen from "./screens/Home/HomeScreen.jsx";
-import TransfersScreen from "./screens/Transfers/TransfersScreen.jsx";
 
 export default function App() {
   const initialDashboardRef =
@@ -56,31 +53,14 @@ export default function App() {
     setNotificationHistory,
   ] = useState(() => readNotificationHistory());
 
-const [
-  notificationHistoryOpen,
-  setNotificationHistoryOpen,
-] = useState(false);
-
-const [
-  notificationLastReadAt,
-  setNotificationLastReadAt,
-] = useState(() => {
-  try {
-    return Number(
-      window.localStorage.getItem(
-        NOTIFICATION_LAST_READ_KEY
-      ) ||
-      0
-    );
-  } catch {
-    return 0;
-  }
-});
+  const [
+    notificationHistoryOpen,
+    setNotificationHistoryOpen,
+  ] = useState(false);
 
   const [selectedTeamPlayer, setSelectedTeamPlayer] = useState(null);
   const [selectedMarketPlayer, setSelectedMarketPlayer] = useState(null);
   const [selectedXIPlayer, setSelectedXIPlayer] = useState(null);
-  const [selectedRival, setSelectedRival] = useState(null);
 
   const [
     realAction,
@@ -106,11 +86,6 @@ const [
   manualRefreshCooldownUntil,
   setManualRefreshCooldownUntil,
 ] = useState(0);
-
-const [
-  rivalsLoading,
-  setRivalsLoading,
-] = useState(false);
 
 const [
   lineupSaving,
@@ -152,73 +127,15 @@ const removeToast = useCallback((id) => {
   );
 }, []);
 
-const unreadNotificationCount =
-  useMemo(
-    () =>
-      notificationHistory.filter(
-        (item) =>
-          Number(
-            item?.createdAt ||
-            0
-          ) >
-          notificationLastReadAt
-      ).length,
-    [
-      notificationHistory,
-      notificationLastReadAt,
-    ]
-  );
-
-const markNotificationsRead =
-  useCallback(
-    () => {
-      const value =
-        Date.now();
-
-      setNotificationLastReadAt(
-        value
-      );
-
-      try {
-        window.localStorage.setItem(
-          NOTIFICATION_LAST_READ_KEY,
-          String(
-            value
-          )
-        );
-      } catch {
-        // localStorage opcional.
-      }
-    },
-    []
-  );
-
-const openRealNotifications =
-  useCallback(
-    () => {
-      markNotificationsRead();
-
-      setNotificationHistoryOpen(
-        true
-      );
-    },
-    [
-      markNotificationsRead,
-    ]
-  );
-
 const clearNotificationHistory = useCallback(() => {
   setNotificationHistory([]);
-  markNotificationsRead();
 
   try {
     window.localStorage.removeItem(NOTIFICATION_HISTORY_KEY);
   } catch {
     // localStorage opcional.
   }
-}, [
-  markNotificationsRead,
-]);
+}, []);
 
 const pushToast = useCallback(
   (title, message, type = "info", meta = {}) => {
@@ -293,9 +210,7 @@ const loadData = useCallback(
   async ({
     silent = false,
     refresh = "smart",
-    includeRivals = false,
     includeLineup = false,
-    includeTransfers = true,
   } = {}) => {
     try {
       if (!silent) {
@@ -308,18 +223,8 @@ const loadData = useCallback(
         new URLSearchParams({
           refresh,
 
-          includeRivals:
-            includeRivals
-              ? "1"
-              : "0",
-
           includeLineup:
             includeLineup
-              ? "1"
-              : "0",
-
-          includeTransfers:
-            includeTransfers
               ? "1"
               : "0",
         });
@@ -616,19 +521,10 @@ useEffect(() => {
                 message.refresh ||
                 "smart",
 
-              includeRivals:
-                Boolean(
-                  message.includeRivals
-                ),
-
               includeLineup:
                 Boolean(
                   message.includeLineup
                 ),
-
-              includeTransfers:
-                message.includeTransfers !==
-                false,
             });
         }
       };
@@ -745,9 +641,7 @@ const requestRefresh =
     ({
       silent = true,
       refresh = "smart",
-      includeRivals = false,
       includeLineup = false,
-      includeTransfers = true,
     } = {}) => {
       if (
         apiLeaderRef.current
@@ -755,9 +649,7 @@ const requestRefresh =
         return loadData({
           silent,
           refresh,
-          includeRivals,
           includeLineup,
-          includeTransfers,
         });
       }
 
@@ -768,9 +660,7 @@ const requestRefresh =
           type: "refresh-request",
           silent,
           refresh,
-          includeRivals,
           includeLineup,
-          includeTransfers,
         });
       }
 
@@ -814,26 +704,6 @@ useEffect(() => {
 }, [
   isApiLeader,
   loadData,
-]);
-
-useEffect(() => {
-  if (
-    tab !==
-    "rivals"
-  ) {
-    return;
-  }
-
-  setRivalsLoading(true);
-
-  void requestRefresh({
-    silent: true,
-    refresh: "rivals",
-    includeRivals: true,
-  });
-}, [
-  tab,
-  requestRefresh,
 ]);
 
 useEffect(() => {
@@ -1682,11 +1552,8 @@ const handleManualRefresh =
           myBids.length +
           mySales.length
         }
-        unreadNotificationCount={
-          unreadNotificationCount
-        }
-        onOpenNotifications={
-          openRealNotifications
+        notificationCount={
+          notificationHistory.length
         }
         refreshing={refreshing}
         manualRefreshRemaining={
@@ -1789,18 +1656,6 @@ const handleManualRefresh =
           />
         )}
 
-{tab ===
-  "transfers" && (
-  <TransfersScreen
-    data={
-      data
-    }
-    onPlayerDetails={
-      setSelectedMarketPlayer
-    }
-  />
-)}
-
         {tab ===
           "moves" && (
           <MovementsScreen
@@ -1848,22 +1703,6 @@ const handleManualRefresh =
             }
             saveError={
               lineupError
-            }
-          />
-        )}
-
-        {tab ===
-          "rivals" && (
-          <RivalsScreen
-            rivals={
-              data?.rivals ||
-              []
-            }
-            loading={
-              rivalsLoading
-            }
-            onDetails={
-              setSelectedRival
             }
           />
         )}
@@ -1969,7 +1808,6 @@ const handleManualRefresh =
   }
 />
 
-      <RivalDetailModal rival={selectedRival} balanceHidden={data?.league?.settings?.balanceHidden} onClose={() => setSelectedRival(null)} />
     </div>
   );
 }

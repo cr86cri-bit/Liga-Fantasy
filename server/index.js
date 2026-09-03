@@ -367,30 +367,17 @@ app.get("/api/dashboard", async (req, res) => {
         "smart"
       ).trim();
 
-    const includeRivals =
-      String(
-        req.query?.includeRivals ||
-        ""
-      ) === "1";
-
     const includeLineup =
       String(
         req.query?.includeLineup ||
         ""
       ) === "1";
 
-    const includeTransfers =
-      String(
-        req.query?.includeTransfers ||
-        ""
-      ) === "1";
-
     const data =
       await getClient().obtenerDashboard({
         refresh,
-        includeRivals,
+        includeRivals: false,
         includeLineup,
-        includeTransfers,
       });
 
     res.json({

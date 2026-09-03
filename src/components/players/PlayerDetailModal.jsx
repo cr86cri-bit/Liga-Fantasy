@@ -219,32 +219,6 @@ function PlayerDetailModal({
         </div>
       </section>
 
-      {context === "market" && intel?.competitors?.length > 0 && (
-        <section className="modal-section">
-          <div className="modal-section-title">
-            <div>
-              <span className="section-label">COMPETENCIA</span>
-              <h3>Rivales que podrían pujar</h3>
-            </div>
-
-            <strong>
-              {intel.competitionLabel} · {intel.competitionScore}/100
-            </strong>
-          </div>
-
-          <div className="competitor-modal-list">
-            {intel.competitors.map((rival) => (
-              <div className="competitor-modal-row" key={rival.userId}>
-                <div>
-                  <strong>{rival.name}</strong>
-                  <span>{rival.reason}</span>
-                </div>
-                <b>{rival.threatScore}/100</b>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
     </Modal>
   );
 }

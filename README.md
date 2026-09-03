@@ -675,93 +675,54 @@ El sidebar tiene ahora filas de altura controlada para:
 Las franjas y el pie ya no pueden crecer o desbordarse, y se mantienen
 alineados tanto expandido como plegado.
 
-## Fichajes y notificaciones reales
+## Versión simplificada: sin Fichajes y sin Rivales
 
-### Nueva pestaña Fichajes
+Se retiraron las dos funcionalidades solicitadas.
 
-Se añadió una nueva pestaña **Fichajes** al sidebar y al menú superior.
+### Eliminado: Fichajes
 
-El backend consulta el tablón de la liga mediante el endpoint de noticias de
-Biwenger y separa:
+Esta versión parte de la última base estable anterior a la integración del
+tablón legacy de Biwenger. Por lo tanto ya no existen:
 
-- `market` → **Mercado de fichajes**;
-- `transfer` / `adminTransfer` → **Fichajes** entre managers.
+- pestaña Fichajes;
+- Mercado de fichajes;
+- traspasos del tablón;
+- `/api/v1/league/news`;
+- caché `transfers`;
+- llamadas legacy;
+- errores `Biwenger transfers: Invalid ID`.
 
-Las tarjetas muestran, cuando Biwenger lo entrega:
+### Eliminado: Rivales
 
-- jugador;
-- foto;
-- posición;
-- club;
-- comprador;
-- vendedor;
-- importe;
-- cantidad de pujas;
-- antigüedad del movimiento.
+Se retiraron:
 
-La respuesta se cachea durante **30 minutos** y pasa por el mismo scheduler,
-ApiGuard, ApiUsageTracker y circuit breaker. En condiciones normales supone
-como máximo unas 2 llamadas reales por hora al tablón, y las consultas
-intermedias se resuelven desde caché.
+- pestaña Rivales del sidebar;
+- pestaña Rivales del menú superior;
+- tabla de rivales;
+- modal de detalle de rival;
+- carga automática de plantillas rivales;
+- bloque "Rivales que podrían pujar" en el detalle del mercado;
+- contador/TTL de Rivales en Protección.
 
-Si el endpoint de noticias cambia o falla, el dashboard conserva el último
-tablón persistido y no rompe el resto de la aplicación.
+Además, el backend fuerza `includeRivals: false` y `wantsRivals = false`, por lo
+que aunque una URL antigua intente enviar `includeRivals=1`, no se realizan
+peticiones para consultar plantillas de otros managers.
 
-### Inicio
+### Se mantiene
 
-Inicio incluye ahora dos bloques nuevos:
-
-- **Mercado de fichajes**;
-- **Fichajes**.
-
-Muestran una selección de los movimientos más recientes y enlazan a la nueva
-pestaña completa.
-
-### Notificaciones
-
-Se corrigió el contador de la barra superior.
-
-Antes mostraba `notificationHistory.length`, es decir, todos los registros
-históricos guardados. Por eso podía aparecer un número como 78 aunque no fueran
-avisos nuevos.
-
-Ahora hay:
-
-- botón **Movimientos** independiente y sin contador;
-- botón **Notificaciones** independiente;
-- el contador representa únicamente notificaciones no leídas;
-- al abrir Notificaciones, el contador vuelve a cero;
-- el historial completo se conserva hasta que el usuario pulse Limpiar.
-
-El estado de lectura se guarda en:
-`liga-fantasy-notification-last-read-v1`.
-
-### Legibilidad
-
-También se aumentaron tamaños de texto en:
-
-- sidebar;
-- menú superior;
-- encabezados;
-- cards de Inicio;
-- jugadores;
-- mercado;
-- fichajes;
-- historial de notificaciones.
-
-## Corrección de `Biwenger transfers: Invalid ID`
-
-El endpoint de fichajes usa:
-
-`GET https://biwenger.as.com/api/v1/league/news`
-
-La versión anterior reutilizaba `crearHeaders(true)`, que enviaba `X-League`
-y también `X-User`.
-
-El tablón legacy identifica la liga con `X-League`. Ahora utiliza
-`crearHeadersLegacyLeague()`, que conserva Authorization, X-Version, X-Lang y
-X-League, pero elimina X-User.
-
-También se añadió un backoff local de 10 minutos si únicamente ese endpoint
-legacy devuelve otro error 4xx. Ese backoff no bloquea Mercado, Equipo,
-Alineación, Rivales, pujas ni ventas.
+- Inicio;
+- Mi equipo;
+- Mercado;
+- Movimientos;
+- Mejor XI;
+- Protección;
+- pujas;
+- ventas;
+- puja máxima recomendada;
+- alineación;
+- notificaciones;
+- historial;
+- caché inteligente;
+- pestaña líder;
+- scheduler;
+- circuit breaker.

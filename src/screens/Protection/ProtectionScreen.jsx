@@ -30,7 +30,7 @@ export default function ProtectionScreen({
             </strong>
 
             <span>
-              Mercado 5 min · Equipo 10 min · Alineación 15 min bajo demanda · Rivales 30 min bajo demanda · Catálogo 6 h
+              Mercado 5 min · Equipo 10 min · Alineación 15 min bajo demanda · Catálogo 6 h
             </span>
           </div>
 

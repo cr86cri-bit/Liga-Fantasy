@@ -28,11 +28,6 @@ const NAVIGATION = [
     icon: "⌑",
   },
   {
-    key: "transfers",
-    label: "Fichajes",
-    icon: "↗",
-  },
-  {
     key: "xi",
     label: "Mejor XI",
     icon: "☆",
@@ -41,11 +36,6 @@ const NAVIGATION = [
     key: "moves",
     label: "Movimientos",
     icon: "⇄",
-  },
-  {
-    key: "rivals",
-    label: "Rivales",
-    icon: "◎",
   },
   {
     key: "protection",
@@ -161,10 +151,6 @@ function getBadge(
     moves:
       movesCount,
 
-    rivals:
-      data?.rivals
-        ?.length ||
-      0,
   };
 
   return map[
@@ -178,8 +164,7 @@ export default function DashboardShell({
   data,
   marketCount,
   movesCount,
-  unreadNotificationCount,
-  onOpenNotifications,
+  notificationCount,
   refreshing,
   manualRefreshRemaining,
   onRefresh,
@@ -483,32 +468,21 @@ export default function DashboardShell({
 
             <button
               type="button"
-              className="dashboard-movements-button"
+              className="dashboard-notification-button"
               onClick={() =>
                 onNavigate(
                   "moves"
                 )
               }
-              title="Pujas, ventas y movimientos"
+              title="Ver movimientos y avisos"
             >
-              ⇄
-            </button>
+              ♧
 
-            <button
-              type="button"
-              className="dashboard-real-notification-button"
-              onClick={
-                onOpenNotifications
-              }
-              title="Notificaciones reales detectadas"
-            >
-              🔔
-
-              {unreadNotificationCount >
+              {notificationCount >
                 0 && (
                 <span>
                   {Math.min(
-                    unreadNotificationCount,
+                    notificationCount,
                     99
                   )}
                 </span>

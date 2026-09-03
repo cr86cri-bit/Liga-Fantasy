@@ -143,11 +143,6 @@ function ApiProtectionPanel({
         </div>
 
         <div>
-          <span>Rivales</span>
-          <strong>{formatShortDuration(next.rivalsSeconds)}</strong>
-        </div>
-
-        <div>
           <span>Catálogo</span>
           <strong>{formatShortDuration(next.catalogSeconds)}</strong>
         </div>
