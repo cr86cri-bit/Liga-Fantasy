@@ -1201,3 +1201,121 @@ textarea:focus {
       0.48
     );
 }
+
+
+/* =========================================================
+   ESCUDOS · MODAL DE JUGADOR + MEJOR XI
+   ========================================================= */
+
+/* Escudo grande junto al nombre del jugador en la cabecera del modal. */
+.team-crest-title {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  padding: 3px;
+  border: 1px solid rgba(212, 175, 55, 0.26);
+  border-radius: 9px;
+  background: rgba(242, 231, 189, 0.055);
+}
+
+/* Escudo compacto dentro del nombre en el campo de Mejor XI. */
+.team-crest-pitch {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  padding: 1px;
+  border-radius: 4px;
+  background: rgba(242, 231, 189, 0.08);
+}
+
+.player-modal-title-with-crest {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  vertical-align: middle;
+}
+
+.player-modal-title-with-crest > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-modal-club-line {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+}
+
+.player-modal-club-line > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * La barra de nombre del XI incluye ahora escudo + nombre.
+ * Conservamos el ancho original para no alterar posiciones del campo.
+ */
+.pitch-player > .pitch-player-name {
+  width: 100%;
+  min-height: 27px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 0;
+  padding: 4px 6px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: rgba(4, 24, 12, 0.82);
+  color: #fff;
+}
+
+.pitch-player-name > strong {
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * La regla antigua estaba dirigida a .pitch-player > strong.
+ * El nombre ahora vive dentro de .pitch-player-name.
+ */
+.pitch-player > .pitch-player-name + .pitch-points {
+  margin-top: 3px;
+}
+
+/* El fallback del escudo también mantiene el tamaño correcto. */
+.team-crest-title.team-crest-fallback {
+  font-size: 9px;
+}
+
+.team-crest-pitch.team-crest-fallback {
+  font-size: 5px;
+}
+
+/* Hover sutil para mantener la sensación de elemento interactivo. */
+.pitch-player:hover .team-crest-pitch {
+  filter: brightness(1.12);
+}
+
+@media (max-width: 640px) {
+  .team-crest-title {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+  }
+
+  .player-modal-title-with-crest {
+    gap: 8px;
+  }
+}

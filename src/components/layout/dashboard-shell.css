@@ -4130,3 +4130,20 @@ button {
       repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* =========================================================
+   MEJOR XI · ESCUDO + NOMBRE
+   ========================================================= */
+
+.pitch-player-name > strong {
+  font-size: 12px !important;
+}
+
+.pitch-player > .pitch-player-name {
+  min-height: 30px;
+}
+
+.player-modal-title-with-crest {
+  font-size: inherit;
+}

@@ -1,4 +1,4 @@
-import { PlayerPhoto } from "../ui/PlayerUI.jsx";
+import { PlayerPhoto, TeamCrest } from "../ui/PlayerUI.jsx";
 import { lineupAvailabilityInfo } from "./lineupHelpers.js";
 
 function PitchLine({
@@ -121,9 +121,16 @@ function PitchLine({
                 )}
               </div>
 
-              <strong>
-                {player.name}
-              </strong>
+              <span className="pitch-player-name">
+                <TeamCrest
+                  player={player}
+                  size="pitch"
+                />
+
+                <strong>
+                  {player.name}
+                </strong>
+              </span>
 
               <span className="pitch-points">
                 {Number(

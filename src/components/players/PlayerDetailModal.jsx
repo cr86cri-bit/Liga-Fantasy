@@ -1,5 +1,5 @@
 import { formatMoney, formatChange, changeClass, statusConfig } from "../../utils/app.js";
-import { Position, Recommendation, PlayerPhoto, Fitness, AnalysisScore, Countdown, Fixture, Modal, DetailMetric, Breakdown, SellerBadge } from "../ui/PlayerUI.jsx";
+import { Position, Recommendation, PlayerPhoto, TeamCrest, Fitness, AnalysisScore, Countdown, Fixture, Modal, DetailMetric, Breakdown, SellerBadge } from "../ui/PlayerUI.jsx";
 import { SportsSourcesButton } from "../sports/SportsSourcesButton.jsx";
 
 function PlayerDetailModal({
@@ -21,6 +21,18 @@ function PlayerDetailModal({
       open={Boolean(player)}
       onClose={onClose}
       title={player.name}
+      titleContent={
+        <span className="player-modal-title-with-crest">
+          <TeamCrest
+            player={player}
+            size="title"
+          />
+
+          <span>
+            {player.name}
+          </span>
+        </span>
+      }
       subtitle={`${player.teamName} · ${player.position}`}
       wide
     >
@@ -34,8 +46,20 @@ function PlayerDetailModal({
               <Recommendation value={player.analysis?.recommendation} />
             </div>
 
-            <h3>{player.name}</h3>
-            <p>{player.teamName}</p>
+            <h3>
+              {player.name}
+            </h3>
+
+            <p className="player-modal-club-line">
+              <TeamCrest
+                player={player}
+                size="tiny"
+              />
+
+              <span>
+                {player.teamName}
+              </span>
+            </p>
 
             <span className={`status ${statusClass}`}>
               {statusConfig(player.status)[0]} {statusLabel}

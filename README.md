@@ -813,3 +813,67 @@ con acceso para restablecerlos.
 
 Todos los filtros se realizan en React sobre la plantilla ya cargada. Cambiar
 los filtros **no genera ninguna llamada adicional a Biwenger**.
+
+## Componente base TimePicker
+
+Nuevo componente reutilizable:
+
+- `src/components/ui/TimePicker.jsx`
+- `src/components/ui/TimePicker.css`
+
+Características:
+
+- selector tipo rueda;
+- formato **24 horas por defecto**;
+- opción **AM / PM**;
+- valor canónico siempre `HH:mm` en formato 24 h;
+- scroll, click/tap y teclas ↑/↓;
+- `minuteStep` configurable;
+- `disabled`;
+- `helperText`;
+- responsive;
+- sin dependencias nuevas.
+
+Ejemplo:
+
+```jsx
+const [hora, setHora] = useState("20:00");
+
+<TimePicker
+  value={hora}
+  onChange={setHora}
+/>
+```
+
+Aunque se muestre `08:00 PM`, `onChange` devuelve `20:00`.
+
+## Escudos en detalles y Mejor XI
+
+Se mejoró la identidad visual de los jugadores utilizando el mismo componente
+base `TeamCrest` que ya usa Mi equipo y Mercado.
+
+### Modal de detalle
+
+La cabecera del modal muestra ahora:
+
+`[escudo del club] Nombre del jugador`
+
+Además, debajo del nombre en la ficha principal aparece:
+
+`[escudo] Nombre del club`
+
+Esto funciona en los detalles abiertos desde Mi equipo, Mercado y Mejor XI,
+porque todos reutilizan `PlayerDetailModal`.
+
+### Mejor XI
+
+Cada jugador del campo muestra ahora su escudo junto al nombre:
+
+`[escudo] Pedri`
+
+Los escudos utilizan primero `player.teamIconUrl` y mantienen el fallback
+existente de Biwenger mediante `teamId`. Si no hay imagen disponible, se usan
+las iniciales del club.
+
+No se añadieron endpoints ni llamadas a Biwenger: se reutilizan los datos de
+club que ya llegan con cada jugador.

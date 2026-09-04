@@ -401,7 +401,15 @@ function unlockPageScroll() {
   document.body.style.paddingRight = modalOriginalBodyPaddingRight;
 }
 
-function Modal({ open, onClose, title, subtitle, children, wide = false }) {
+function Modal({
+  open,
+  onClose,
+  title,
+  titleContent,
+  subtitle,
+  children,
+  wide = false,
+}) {
   useEffect(() => {
     if (!open) return undefined;
 
@@ -439,12 +447,22 @@ function Modal({ open, onClose, title, subtitle, children, wide = false }) {
         className={`modal-panel ${wide ? "modal-panel-wide" : ""}`}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-label={
+          typeof title ===
+          "string"
+            ? title
+            : "Detalle"
+        }
       >
         <header className="modal-header">
           <div>
             <span className="section-label">DETALLE</span>
-            <h2>{title}</h2>
+
+            <h2>
+              {titleContent ||
+                title}
+            </h2>
+
             {subtitle && <p>{subtitle}</p>}
           </div>
 
